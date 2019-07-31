@@ -1,15 +1,17 @@
 package org.spring.openapi.schema.generator;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.classgraph.*;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,16 +28,28 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
     @Parameter
     private String outputDirectory;
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() {
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        try {
+            if (!new File(outputDirectory).mkdirs()) {
+                getLog().error(String.format("Error creating directories for path [%s]", outputDirectory));
+                return;
+            }
+            objectMapper.writeValue(new File(outputDirectory + "/swagger.json"), openAPI);
+        } catch (IOException e) {
+            getLog().error("Cannot serialize generated OpenAPI spec", e);
+        }
     }
 
     private Components createComponentsWrapper() {
         Components componentsWrapper = new Components();
         componentsWrapper.setSchemas(createSchemas());
         return componentsWrapper;
-
     }
 
     private Map<String, Schema> createSchemas() {
@@ -75,6 +89,8 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
         } else if (typeSignature instanceof ArrayTypeSignature) {
 
         } else if (typeSignature instanceof ReferenceTypeSignature) {
+
+        } else if (typeSignature instanceof ClassRefTypeSignature) {
 
         }
         return Optional.empty();

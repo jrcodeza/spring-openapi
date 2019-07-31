@@ -63,6 +63,12 @@ public class SimpleSchemaTransformer extends Transformer {
             case "java.util.List":
                 // TODO referencies necessary
                 return null;
+            case "java.time.LocalDate":
+            case "java.time.LocalDateTime":
+            case "java.time.LocalTime":
+            case "java.lang.Date":
+                // TODO implement
+                return null;
             default:
                 // TODO implement referencies
                 return null;

@@ -2,7 +2,9 @@ package org.spring.openapi.schema.generator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.classgraph.*;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -14,7 +16,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Mojo(name = "generateOpenApi")
 public class GenerateOpenApiSchemaMojo extends AbstractMojo {
@@ -28,7 +29,11 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
     @Parameter
     private String outputDirectory;
 
+    private SimpleSchemaTransformer simpleSchemaTransformer;
+
     public void execute() {
+        simpleSchemaTransformer = new SimpleSchemaTransformer(getLog());
+
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
 
@@ -60,81 +65,12 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
                     if (schemaMap.containsKey(classInfo.getSimpleName())) {
                         continue;
                     }
-                    schemaMap.put(classInfo.getSimpleName(), createSchema(classInfo));
+                    schemaMap.put(classInfo.getSimpleName(), simpleSchemaTransformer.transformSimpleSchema(classInfo));
                 }
+                // TODO required lookup
             }
         }
         return schemaMap;
-    }
-
-    private Schema createSchema(ClassInfo classInfo) {
-        Schema<?> schema = new Schema<>();
-        schema.setType("object");
-        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo()));
-        return schema;
-    }
-
-    private Map<String, Schema> getClassProperties(FieldInfoList declaredFieldInfo) {
-        Map<String, Schema> classPropertyMap = new HashMap<>();
-        for (FieldInfo fieldInfo : declaredFieldInfo) {
-            getFieldSchema(fieldInfo).ifPresent(schema -> classPropertyMap.put(fieldInfo.getName(), schema));
-        }
-        return classPropertyMap;
-    }
-
-    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo) {
-        TypeSignature typeSignature = fieldInfo.getTypeSignatureOrTypeDescriptor();
-        if (typeSignature instanceof BaseTypeSignature) {
-            return Optional.ofNullable(parseBaseTypeSignature((BaseTypeSignature) typeSignature));
-        } else if (typeSignature instanceof ArrayTypeSignature) {
-
-        } else if (typeSignature instanceof ReferenceTypeSignature) {
-
-        } else if (typeSignature instanceof ClassRefTypeSignature) {
-
-        }
-        return Optional.empty();
-    }
-
-    private Schema parseBaseTypeSignature(BaseTypeSignature typeSignature) {
-        switch (typeSignature.getTypeStr()) {
-            case "byte":
-            case "short":
-            case "int":
-                return createNumberSchema("integer", "int32");
-            case "long":
-                return createNumberSchema("integer", "int64");
-            case "float":
-                return createNumberSchema("number", "float");
-            case "double":
-                return createNumberSchema("number", "double");
-            case "char":
-                return createCharSchema();
-            case "boolean":
-                return createBooleanSchema();
-        }
-        getLog().info(String.format("Ignoring unsupported type=[%s]", typeSignature.getTypeStr()));
-        return null;
-    }
-
-    private Schema createBooleanSchema() {
-        Schema<?> schema = new Schema<>();
-        schema.setType("boolean");
-        return schema;
-    }
-
-    private Schema createCharSchema() {
-        Schema<?> schema = new Schema<>();
-        schema.setType("string");
-        return schema;
-    }
-
-    private Schema createNumberSchema(String type, String format) {
-        Schema<?> schema = new Schema<>();
-        schema.setType("integer");
-        schema.setFormat(format);
-        // TODO min inclusive etc
-        return schema;
     }
 
     private ClassGraph getClassGraph(String modelPackage) {

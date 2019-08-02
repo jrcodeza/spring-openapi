@@ -26,6 +26,7 @@
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <junit.version>4.12</junit.version>
         <validation-api.version>2.0.1.Final</validation-api.version>
+        <jackson-annotations.version>2.9.9</jackson-annotations.version>
     </properties>
 
     <dependencyManagement>
@@ -90,6 +91,12 @@
                 <groupId>javax.validation</groupId>
                 <artifactId>validation-api</artifactId>
                 <version>${validation-api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
             </dependency>
 
             <dependency>

@@ -1,54 +1,80 @@
 package org.spring.openapi.schema.generator;
 
 import io.github.classgraph.*;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
+import org.spring.openapi.schema.generator.model.InheritanceInfo;
 
 import javax.validation.constraints.*;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
 public class SimpleSchemaTransformer extends Transformer {
 
+    private static final String COMPONENT_REF_PREFIX = "#/components/schemas/";
+
     public SimpleSchemaTransformer(Log log) {
         super(log);
     }
 
-    public Schema transformSimpleSchema(ClassInfo classInfo) {
+    public Schema transformSimpleSchema(ClassInfo classInfo, Map<String, InheritanceInfo> inheritanceMap) {
         Schema<?> schema = new Schema<>();
         schema.setType("object");
-        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo()));
+        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap));
+        if (inheritanceMap.containsKey(classInfo.getSimpleName())) {
+            schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getSimpleName())));
+        }
         return schema;
     }
 
-    private Map<String, Schema> getClassProperties(FieldInfoList declaredFieldInfo) {
+    private Discriminator createDiscriminator(InheritanceInfo inheritanceInfo) {
+        Map<String, String> discriminatorTypeMapping = inheritanceInfo.getDiscriminatorClassMap().entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+        Discriminator discriminator = new Discriminator();
+        discriminator.setPropertyName(inheritanceInfo.getDiscriminatorFieldName());
+        discriminator.setMapping(discriminatorTypeMapping);
+        return discriminator;
+    }
+
+    private Map<String, Schema> getClassProperties(FieldInfoList declaredFieldInfo,
+                                                   Map<String, InheritanceInfo> inheritanceMap) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
         for (FieldInfo fieldInfo : declaredFieldInfo) {
-            getFieldSchema(fieldInfo).ifPresent(schema -> classPropertyMap.put(fieldInfo.getName(), schema));
+            getFieldSchema(fieldInfo, inheritanceMap)
+                    .ifPresent(schema -> classPropertyMap.put(fieldInfo.getName(), schema));
         }
         return classPropertyMap;
     }
 
-    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo) {
+    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo, Map<String, InheritanceInfo> inheritanceMap) {
         TypeSignature typeSignature = fieldInfo.getTypeSignatureOrTypeDescriptor();
         Annotation[] annotations = fieldInfo.loadClassAndGetField().getAnnotations();
         if (typeSignature instanceof BaseTypeSignature) {
             return Optional.ofNullable(parseBaseTypeSignature((BaseTypeSignature) typeSignature, annotations));
         } else if (typeSignature instanceof ArrayTypeSignature) {
-
+            // TODO
         } else if (typeSignature instanceof ClassRefTypeSignature) {
-            return Optional.ofNullable(parseClassRefTypeSignature((ClassRefTypeSignature) typeSignature, annotations));
+            return Optional.ofNullable(
+                    parseClassRefTypeSignature((ClassRefTypeSignature) typeSignature, annotations, inheritanceMap)
+            );
         }
         return Optional.empty();
     }
 
-    private Schema parseClassRefTypeSignature(ClassRefTypeSignature typeSignature, Annotation[] annotations) {
+    private Schema parseClassRefTypeSignature(ClassRefTypeSignature typeSignature, Annotation[] annotations,
+                                              Map<String, InheritanceInfo> inheritanceMap) {
         switch (typeSignature.getFullyQualifiedClassName()) {
             case "java.lang.Byte":
             case "java.lang.Short":
@@ -77,14 +103,30 @@ public class SimpleSchemaTransformer extends Transformer {
             case "java.time.LocalTime":
                 return createStringSchema("date-time", annotations);
             default:
-                return createRefSchema(typeSignature.getClassInfo().getSimpleName());
+                return createRefSchema(typeSignature.getClassInfo().getSimpleName(), inheritanceMap);
         }
     }
 
-    private Schema createRefSchema(String baseClassName) {
-        Schema<?> schema = new Schema<>();
-        schema.set$ref("#/components/schemas/" + baseClassName);
+    private ComposedSchema createRefSchema(String baseClassName, Map<String, InheritanceInfo> inheritanceMap) {
+        ComposedSchema schema = new ComposedSchema();
+        if (inheritanceMap.containsKey(baseClassName)) {
+            InheritanceInfo inheritanceInfo = inheritanceMap.get(baseClassName);
+            schema.setOneOf(createOneOf(inheritanceInfo));
+            schema.setDiscriminator(createDiscriminator(inheritanceInfo));
+            return schema;
+        }
+        schema.set$ref(COMPONENT_REF_PREFIX + baseClassName);
         return schema;
+    }
+
+    private List<Schema> createOneOf(InheritanceInfo inheritanceInfo) {
+        return inheritanceInfo.getDiscriminatorClassMap().keySet().stream()
+                .map(key -> {
+                    Schema<?> schema = new Schema<>();
+                    schema.set$ref(COMPONENT_REF_PREFIX + key);
+                    return schema;
+                })
+                .collect(Collectors.toList());
     }
 
     private Schema parseBaseTypeSignature(BaseTypeSignature typeSignature, Annotation[] annotations) {

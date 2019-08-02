@@ -9,9 +9,6 @@ public class ValidationDummy {
     @DecimalMax("2.5")
     private BigDecimal decimalRange;
 
-    @Digits(integer = 5, fraction = 3)
-    private BigDecimal digits;
-
     @Email
     private String email;
 
@@ -53,14 +50,6 @@ public class ValidationDummy {
 
     public void setDecimalRange(BigDecimal decimalRange) {
         this.decimalRange = decimalRange;
-    }
-
-    public BigDecimal getDigits() {
-        return digits;
-    }
-
-    public void setDigits(BigDecimal digits) {
-        this.digits = digits;
     }
 
     public String getEmail() {

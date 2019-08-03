@@ -1,7 +1,5 @@
 package org.spring.openapi.schema.generator.model;
 
-import org.spring.openapi.schema.generator.base.Entity;
-
 import java.time.LocalDateTime;
 import java.util.List;
 

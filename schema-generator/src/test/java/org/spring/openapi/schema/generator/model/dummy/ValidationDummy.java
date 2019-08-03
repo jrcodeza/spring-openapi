@@ -1,4 +1,6 @@
-package org.spring.openapi.schema.generator.model;
+package org.spring.openapi.schema.generator.model.dummy;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
@@ -43,6 +45,12 @@ public class ValidationDummy {
 
     @Size(max = 10)
     private String stringSizeOnlyMax;
+
+    @Schema(deprecated = true)
+    private String deprecated;
+
+    @Deprecated
+    private String javaDeprecated;
 
     public BigDecimal getDecimalRange() {
         return decimalRange;
@@ -138,5 +146,21 @@ public class ValidationDummy {
 
     public void setStringSizeOnlyMax(String stringSizeOnlyMax) {
         this.stringSizeOnlyMax = stringSizeOnlyMax;
+    }
+
+    public String getDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(String deprecated) {
+        this.deprecated = deprecated;
+    }
+
+    public String getJavaDeprecated() {
+        return javaDeprecated;
+    }
+
+    public void setJavaDeprecated(String javaDeprecated) {
+        this.javaDeprecated = javaDeprecated;
     }
 }

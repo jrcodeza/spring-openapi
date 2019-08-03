@@ -1,9 +1,7 @@
 package org.spring.openapi.schema.generator;
 
 import io.github.classgraph.*;
-import io.swagger.v3.oas.models.media.ComposedSchema;
-import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.spring.openapi.schema.generator.model.InheritanceInfo;
@@ -11,12 +9,12 @@ import org.spring.openapi.schema.generator.model.InheritanceInfo;
 import javax.validation.constraints.*;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 public class SimpleSchemaTransformer extends Transformer {
@@ -28,11 +26,24 @@ public class SimpleSchemaTransformer extends Transformer {
     }
 
     public Schema transformSimpleSchema(ClassInfo classInfo, Map<String, InheritanceInfo> inheritanceMap) {
-        Schema<?> schema = new Schema<>();
+        if (classInfo.isEnum()) {
+            return createEnumSchema(classInfo.loadClass().getEnumConstants());
+        }
+        List<String> requiredFields = new ArrayList<>();
+        ComposedSchema schema = new ComposedSchema();
         schema.setType("object");
-        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap));
+        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap, requiredFields));
+
+        if (!requiredFields.isEmpty()) {
+            schema.setRequired(requiredFields);
+        }
         if (inheritanceMap.containsKey(classInfo.getSimpleName())) {
             schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getSimpleName())));
+        }
+        if (classInfo.getSuperclass() != null) {
+            Schema<?> parentClass = new Schema<>();
+            parentClass.set$ref(COMPONENT_REF_PREFIX + classInfo.getSuperclass().getSimpleName());
+            schema.setAllOf(Collections.singletonList(parentClass));
         }
         return schema;
     }
@@ -49,32 +60,112 @@ public class SimpleSchemaTransformer extends Transformer {
     }
 
     private Map<String, Schema> getClassProperties(FieldInfoList declaredFieldInfo,
-                                                   Map<String, InheritanceInfo> inheritanceMap) {
+                                                   Map<String, InheritanceInfo> inheritanceMap,
+                                                   List<String> requiredFields) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
         for (FieldInfo fieldInfo : declaredFieldInfo) {
-            getFieldSchema(fieldInfo, inheritanceMap)
+            getFieldSchema(fieldInfo, inheritanceMap, requiredFields)
                     .ifPresent(schema -> classPropertyMap.put(fieldInfo.getName(), schema));
         }
         return classPropertyMap;
     }
 
-    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo, Map<String, InheritanceInfo> inheritanceMap) {
+    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo, Map<String, InheritanceInfo> inheritanceMap,
+                                            List<String> requiredFields) {
         TypeSignature typeSignature = fieldInfo.getTypeSignatureOrTypeDescriptor();
         Annotation[] annotations = fieldInfo.loadClassAndGetField().getAnnotations();
+        if (isRequired(annotations)) {
+            requiredFields.add(fieldInfo.getName());
+        }
+
         if (typeSignature instanceof BaseTypeSignature) {
-            return Optional.ofNullable(parseBaseTypeSignature((BaseTypeSignature) typeSignature, annotations));
+            if (!requiredFields.contains(fieldInfo.getName())) {
+                requiredFields.add(fieldInfo.getName());
+            }
+            Schema<?> schema = parseBaseTypeSignature((BaseTypeSignature) typeSignature, annotations);
+            enrichWithTypeAnnotations(schema, annotations);
+            return Optional.ofNullable(schema);
         } else if (typeSignature instanceof ArrayTypeSignature) {
-            // TODO
-        } else if (typeSignature instanceof ClassRefTypeSignature) {
-            return Optional.ofNullable(
-                    parseClassRefTypeSignature((ClassRefTypeSignature) typeSignature, annotations, inheritanceMap)
+            Schema<?> schema = parseArraySignature(
+                    ((ArrayTypeSignature) typeSignature).getElementTypeSignature(), inheritanceMap,
+                    annotations
             );
+            enrichWithTypeAnnotations(schema, annotations);
+            return Optional.ofNullable(schema);
+        } else if (typeSignature instanceof ClassRefTypeSignature) {
+            Schema<?> schema = parseClassRefTypeSignature(
+                    (ClassRefTypeSignature) typeSignature, annotations,
+                    inheritanceMap
+            );
+            enrichWithTypeAnnotations(schema, annotations);
+            return Optional.ofNullable(schema);
         }
         return Optional.empty();
     }
 
+    private void enrichWithTypeAnnotations(Schema<?> schema, Annotation[] annotations) {
+        enrichWithAnnotation(io.swagger.v3.oas.annotations.media.Schema.class, annotations,
+                schemaAnnotation -> {
+                    schema.setDeprecated(schemaAnnotation.deprecated());
+                    schema.setDescription(schemaAnnotation.description());
+                });
+        enrichWithAnnotation(Deprecated.class, annotations, deprecatedAnnotation -> schema.setDeprecated(true));
+    }
+
+    private <T> void enrichWithAnnotation(Class<T> annotationClazz, Annotation[] annotations, Consumer<T> consumer) {
+        Stream.of(annotations)
+                .filter(annotation -> annotationClazz.isAssignableFrom(annotation.getClass()))
+                .map(annotationClazz::cast)
+                .findFirst()
+                .ifPresent(consumer);
+    }
+
+    private boolean isRequired(Annotation[] annotations) {
+        return Stream.of(annotations)
+                .anyMatch(annotation -> annotation instanceof NotNull || annotation instanceof NotEmpty
+                        || annotation instanceof NotBlank);
+    }
+
+    private Schema parseArraySignature(TypeSignature elementTypeSignature,
+                                       Map<String, InheritanceInfo> inheritanceMap, Annotation[] annotations) {
+        ArraySchema arraySchema = new ArraySchema();
+        Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
+        if (elementTypeSignature instanceof ClassRefTypeSignature) {
+            ClassRefTypeSignature classRefTypeSignature = (ClassRefTypeSignature) elementTypeSignature;
+            String basicLangItemsType = mapBasicLangItemsType(classRefTypeSignature);
+            if (basicLangItemsType != null) {
+                Schema<?> itemSchema = new Schema<>();
+                itemSchema.setType(basicLangItemsType);
+                arraySchema.setItems(itemSchema);
+                return arraySchema;
+            }
+            String simpleElementClassName = classRefTypeSignature.getClassInfo().getSimpleName();
+            if (inheritanceMap.containsKey(simpleElementClassName)) {
+                InheritanceInfo inheritanceInfo = inheritanceMap.get(simpleElementClassName);
+                ComposedSchema itemSchema = new ComposedSchema();
+                itemSchema.setOneOf(createOneOf(inheritanceInfo));
+                itemSchema.setDiscriminator(createDiscriminator(inheritanceInfo));
+                arraySchema.setItems(itemSchema);
+                return arraySchema;
+            }
+            Schema<?> itemSchema = new Schema<>();
+            itemSchema.set$ref(COMPONENT_REF_PREFIX + simpleElementClassName);
+            arraySchema.setItems(itemSchema);
+            return arraySchema;
+        } else if (elementTypeSignature instanceof BaseTypeSignature) {
+            Schema<?> itemSchema = new Schema<>();
+            itemSchema.setType(mapBaseType((BaseTypeSignature) elementTypeSignature));
+            arraySchema.setItems(itemSchema);
+            return arraySchema;
+        }
+        return arraySchema;
+    }
+
     private Schema parseClassRefTypeSignature(ClassRefTypeSignature typeSignature, Annotation[] annotations,
                                               Map<String, InheritanceInfo> inheritanceMap) {
+        if (typeSignature.getClassInfo() != null && typeSignature.getClassInfo().isEnum()) {
+            return createEnumSchema(typeSignature.getClassInfo().loadClass().getEnumConstants());
+        }
         switch (typeSignature.getFullyQualifiedClassName()) {
             case "java.lang.Byte":
             case "java.lang.Short":
@@ -94,8 +185,7 @@ public class SimpleSchemaTransformer extends Transformer {
             case "java.lang.Boolean":
                 return createBooleanSchema();
             case "java.util.List":
-                // TODO referencies necessary
-                return null;
+                return createListSchema(typeSignature, inheritanceMap, annotations);
             case "java.time.LocalDate":
             case "java.lang.Date":
                 return createStringSchema("date", annotations);
@@ -107,15 +197,24 @@ public class SimpleSchemaTransformer extends Transformer {
         }
     }
 
-    private ComposedSchema createRefSchema(String baseClassName, Map<String, InheritanceInfo> inheritanceMap) {
+    private Schema createListSchema(ClassRefTypeSignature typeSignature, Map<String, InheritanceInfo> inheritanceMap,
+                                    Annotation[] annotations) {
+        List<TypeArgument> typeArguments = typeSignature.getTypeArguments();
+        if (typeArguments.size() != 1) {
+            throw new IllegalArgumentException("List is expected to have 1 generic type argument");
+        }
+        return parseArraySignature(typeArguments.get(0).getTypeSignature(), inheritanceMap, annotations);
+    }
+
+    private ComposedSchema createRefSchema(String simpleClassName, Map<String, InheritanceInfo> inheritanceMap) {
         ComposedSchema schema = new ComposedSchema();
-        if (inheritanceMap.containsKey(baseClassName)) {
-            InheritanceInfo inheritanceInfo = inheritanceMap.get(baseClassName);
+        if (inheritanceMap.containsKey(simpleClassName)) {
+            InheritanceInfo inheritanceInfo = inheritanceMap.get(simpleClassName);
             schema.setOneOf(createOneOf(inheritanceInfo));
             schema.setDiscriminator(createDiscriminator(inheritanceInfo));
             return schema;
         }
-        schema.set$ref(COMPONENT_REF_PREFIX + baseClassName);
+        schema.set$ref(COMPONENT_REF_PREFIX + simpleClassName);
         return schema;
     }
 
@@ -146,7 +245,7 @@ public class SimpleSchemaTransformer extends Transformer {
             case "boolean":
                 return createBooleanSchema();
         }
-        getLog().info(String.format("Ignoring unsupported type=[%s]", typeSignature.getTypeStr()));
+        getLog().info(format("Ignoring unsupported type=[%s]", typeSignature.getTypeStr()));
         return null;
     }
 
@@ -166,12 +265,26 @@ public class SimpleSchemaTransformer extends Transformer {
         return schema;
     }
 
+    private <T> StringSchema createEnumSchema(T[] enumConstants) {
+        StringSchema schema = new StringSchema();
+        schema.setType("string");
+        schema.setEnum(Stream.of(enumConstants).map(Object::toString).collect(Collectors.toList()));
+        return schema;
+    }
+
     private Schema createNumberSchema(String type, String format, Annotation[] annotations) {
         Schema<?> schema = new Schema<>();
         schema.setType(type);
         schema.setFormat(format);
         asList(annotations).forEach(annotation -> applyNumberAnnotation(schema, annotation));
         return schema;
+    }
+
+    private void applyArrayAnnotations(ArraySchema schema, Annotation annotation) {
+        if (annotation instanceof Size) {
+            schema.minItems(((Size) annotation).min());
+            schema.maxItems(((Size) annotation).max());
+        }
     }
 
     private void applyStringAnnotations(Schema<?> schema, Annotation annotation) {
@@ -207,5 +320,52 @@ public class SimpleSchemaTransformer extends Transformer {
         }
     }
 
+    private String mapBasicLangItemsType(ClassRefTypeSignature classRefTypeSignature) {
+        switch (classRefTypeSignature.getFullyQualifiedClassName()) {
+            case "java.lang.Byte":
+            case "java.lang.Short":
+            case "java.lang.Integer":
+            case "java.lang.Long":
+            case "java.math.BigInteger":
+                return "integer";
+            case "java.lang.Float":
+            case "java.lang.Double":
+            case "java.math.BigDecimal":
+                return "number";
+            case "java.lang.Character":
+            case "java.lang.String":
+            case "java.time.LocalDate":
+            case "java.lang.Date":
+            case "java.time.LocalDateTime":
+            case "java.time.LocalTime":
+                return "string";
+            case "java.lang.Boolean":
+                return "boolean";
+            case "java.util.List":
+                throw new IllegalArgumentException("Nested List types are not supported"
+                        + classRefTypeSignature.getBaseClassName()
+                );
+            default:
+                return null;
+        }
+    }
+
+    private String mapBaseType(BaseTypeSignature elementTypeSignature) {
+        switch (elementTypeSignature.getTypeStr()) {
+            case "byte":
+            case "short":
+            case "int":
+            case "long":
+                return "integer";
+            case "float":
+            case "double":
+                return "number";
+            case "char":
+                return "string";
+            case "boolean":
+                return "boolean";
+        }
+        throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getTypeStr()));
+    }
 
 }

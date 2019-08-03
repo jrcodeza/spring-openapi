@@ -1,10 +1,12 @@
 package org.spring.openapi.schema.generator.model;
 
-import org.spring.openapi.schema.generator.base.Entity;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Customer extends Entity {
 
     private boolean vip;
+
+    @Schema(description = "Testing description")
     private Product topCustomerProduct;
 
     public boolean isVip() {

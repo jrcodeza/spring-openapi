@@ -17,6 +17,8 @@ public class Car extends Product {
     @Size(min = 2, max = 30)
     private String model;
 
+    private CarType carType;
+
     public Integer getTorque() {
         return torque;
     }
@@ -39,5 +41,13 @@ public class Car extends Product {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public CarType getCarType() {
+        return carType;
+    }
+
+    public void setCarType(CarType carType) {
+        this.carType = carType;
     }
 }

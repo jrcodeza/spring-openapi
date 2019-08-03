@@ -2,8 +2,8 @@ package org.spring.openapi.schema.generator.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.spring.openapi.schema.generator.base.Entity;
 
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @JsonTypeInfo(
@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 })
 public class Product extends Entity {
 
+    @NotNull
     private BigDecimal price;
     private int amount;
 

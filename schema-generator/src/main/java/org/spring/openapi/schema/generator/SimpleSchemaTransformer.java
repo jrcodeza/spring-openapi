@@ -9,10 +9,7 @@ import org.spring.openapi.schema.generator.model.InheritanceInfo;
 import javax.validation.constraints.*;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,11 +28,16 @@ public class SimpleSchemaTransformer extends Transformer {
         if (classInfo.isEnum()) {
             return createEnumSchema(classInfo.loadClass().getEnumConstants());
         }
-        Schema<?> schema = new Schema<>();
+        ComposedSchema schema = new ComposedSchema();
         schema.setType("object");
         schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap));
         if (inheritanceMap.containsKey(classInfo.getSimpleName())) {
             schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getSimpleName())));
+        }
+        if (classInfo.getSuperclass() != null) {
+            Schema<?> parentClass = new Schema<>();
+            parentClass.set$ref(COMPONENT_REF_PREFIX + classInfo.getSuperclass().getSimpleName());
+            schema.setAllOf(Collections.singletonList(parentClass));
         }
         return schema;
     }

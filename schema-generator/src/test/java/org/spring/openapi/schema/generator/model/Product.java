@@ -2,7 +2,6 @@ package org.spring.openapi.schema.generator.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.spring.openapi.schema.generator.base.Entity;
 
 import java.math.BigDecimal;
 

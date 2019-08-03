@@ -1,7 +1,5 @@
 package org.spring.openapi.schema.generator.model;
 
-import org.spring.openapi.schema.generator.base.Entity;
-
 public class Customer extends Entity {
 
     private boolean vip;

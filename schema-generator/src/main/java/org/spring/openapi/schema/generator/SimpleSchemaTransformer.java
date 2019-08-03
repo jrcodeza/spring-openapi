@@ -28,9 +28,14 @@ public class SimpleSchemaTransformer extends Transformer {
         if (classInfo.isEnum()) {
             return createEnumSchema(classInfo.loadClass().getEnumConstants());
         }
+        List<String> requiredFields = new ArrayList<>();
         ComposedSchema schema = new ComposedSchema();
         schema.setType("object");
-        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap));
+        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap, requiredFields));
+
+        if (!requiredFields.isEmpty()) {
+            schema.setRequired(requiredFields);
+        }
         if (inheritanceMap.containsKey(classInfo.getSimpleName())) {
             schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getSimpleName())));
         }
@@ -54,19 +59,27 @@ public class SimpleSchemaTransformer extends Transformer {
     }
 
     private Map<String, Schema> getClassProperties(FieldInfoList declaredFieldInfo,
-                                                   Map<String, InheritanceInfo> inheritanceMap) {
+                                                   Map<String, InheritanceInfo> inheritanceMap,
+                                                   List<String> requiredFields) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
         for (FieldInfo fieldInfo : declaredFieldInfo) {
-            getFieldSchema(fieldInfo, inheritanceMap)
+            getFieldSchema(fieldInfo, inheritanceMap, requiredFields)
                     .ifPresent(schema -> classPropertyMap.put(fieldInfo.getName(), schema));
         }
         return classPropertyMap;
     }
 
-    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo, Map<String, InheritanceInfo> inheritanceMap) {
+    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo, Map<String, InheritanceInfo> inheritanceMap,
+                                            List<String> requiredFields) {
         TypeSignature typeSignature = fieldInfo.getTypeSignatureOrTypeDescriptor();
         Annotation[] annotations = fieldInfo.loadClassAndGetField().getAnnotations();
+        if (isRequired(annotations)) {
+            requiredFields.add(fieldInfo.getName());
+        }
         if (typeSignature instanceof BaseTypeSignature) {
+            if (!requiredFields.contains(fieldInfo.getName())) {
+                requiredFields.add(fieldInfo.getName());
+            }
             return Optional.ofNullable(parseBaseTypeSignature((BaseTypeSignature) typeSignature, annotations));
         } else if (typeSignature instanceof ArrayTypeSignature) {
             return Optional.ofNullable(parseArraySignature(
@@ -78,6 +91,12 @@ public class SimpleSchemaTransformer extends Transformer {
             );
         }
         return Optional.empty();
+    }
+
+    private boolean isRequired(Annotation[] annotations) {
+        return Stream.of(annotations)
+                .anyMatch(annotation -> annotation instanceof NotNull || annotation instanceof NotEmpty
+                        || annotation instanceof NotBlank);
     }
 
     private Schema parseArraySignature(TypeSignature elementTypeSignature,

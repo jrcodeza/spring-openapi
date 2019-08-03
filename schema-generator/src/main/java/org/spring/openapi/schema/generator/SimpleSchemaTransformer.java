@@ -10,6 +10,7 @@ import javax.validation.constraints.*;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,21 +77,47 @@ public class SimpleSchemaTransformer extends Transformer {
         if (isRequired(annotations)) {
             requiredFields.add(fieldInfo.getName());
         }
+
         if (typeSignature instanceof BaseTypeSignature) {
             if (!requiredFields.contains(fieldInfo.getName())) {
                 requiredFields.add(fieldInfo.getName());
             }
-            return Optional.ofNullable(parseBaseTypeSignature((BaseTypeSignature) typeSignature, annotations));
+            Schema<?> schema = parseBaseTypeSignature((BaseTypeSignature) typeSignature, annotations);
+            enrichWithTypeAnnotations(schema, annotations);
+            return Optional.ofNullable(schema);
         } else if (typeSignature instanceof ArrayTypeSignature) {
-            return Optional.ofNullable(parseArraySignature(
+            Schema<?> schema = parseArraySignature(
                     ((ArrayTypeSignature) typeSignature).getElementTypeSignature(), inheritanceMap,
-                    annotations));
-        } else if (typeSignature instanceof ClassRefTypeSignature) {
-            return Optional.ofNullable(
-                    parseClassRefTypeSignature((ClassRefTypeSignature) typeSignature, annotations, inheritanceMap)
+                    annotations
             );
+            enrichWithTypeAnnotations(schema, annotations);
+            return Optional.ofNullable(schema);
+        } else if (typeSignature instanceof ClassRefTypeSignature) {
+            Schema<?> schema = parseClassRefTypeSignature(
+                    (ClassRefTypeSignature) typeSignature, annotations,
+                    inheritanceMap
+            );
+            enrichWithTypeAnnotations(schema, annotations);
+            return Optional.ofNullable(schema);
         }
         return Optional.empty();
+    }
+
+    private void enrichWithTypeAnnotations(Schema<?> schema, Annotation[] annotations) {
+        enrichWithAnnotation(io.swagger.v3.oas.annotations.media.Schema.class, annotations,
+                schemaAnnotation -> {
+                    schema.setDeprecated(schemaAnnotation.deprecated());
+                    schema.setDescription(schemaAnnotation.description());
+                });
+        enrichWithAnnotation(Deprecated.class, annotations, deprecatedAnnotation -> schema.setDeprecated(true));
+    }
+
+    private <T> void enrichWithAnnotation(Class<T> annotationClazz, Annotation[] annotations, Consumer<T> consumer) {
+        Stream.of(annotations)
+                .filter(annotation -> annotationClazz.isAssignableFrom(annotation.getClass()))
+                .map(annotationClazz::cast)
+                .findFirst()
+                .ifPresent(consumer);
     }
 
     private boolean isRequired(Annotation[] annotations) {

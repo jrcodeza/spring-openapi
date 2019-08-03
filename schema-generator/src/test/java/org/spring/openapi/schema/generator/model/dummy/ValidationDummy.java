@@ -1,4 +1,4 @@
-package org.spring.openapi.schema.generator.model;
+package org.spring.openapi.schema.generator.model.dummy;
 
 import javax.validation.constraints.*;
 import java.math.BigDecimal;

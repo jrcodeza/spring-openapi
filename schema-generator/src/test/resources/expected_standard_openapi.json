@@ -1,0 +1,356 @@
+{
+  "openapi": "3.0.1",
+  "components": {
+    "schemas": {
+      "Order": {
+        "type": "object",
+        "properties": {
+          "dateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "car": "Car",
+                  "laptop": "Laptop"
+                }
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Laptop"
+                },
+                {
+                  "$ref": "#/components/schemas/Car"
+                }
+              ]
+            }
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          }
+        ]
+      },
+      "Entity": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "Laptop": {
+        "required": [
+          "hasWifi",
+          "model"
+        ],
+        "type": "object",
+        "properties": {
+          "hasWifi": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Product"
+          }
+        ]
+      },
+      "Car": {
+        "type": "object",
+        "properties": {
+          "carType": {
+            "type": "string",
+            "enum": [
+              "PERSONAL",
+              "TRUCK",
+              "VAN"
+            ]
+          },
+          "torque": {
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "model": {
+            "maxLength": 30,
+            "minLength": 2,
+            "type": "string"
+          },
+          "maxSpeed": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Product"
+          }
+        ]
+      },
+      "Customer": {
+        "required": [
+          "vip"
+        ],
+        "type": "object",
+        "properties": {
+          "vip": {
+            "type": "boolean"
+          },
+          "topCustomerProduct": {
+            "description": "Testing description",
+            "deprecated": false,
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "car": "Car",
+                "laptop": "Laptop"
+              }
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Laptop"
+              },
+              {
+                "$ref": "#/components/schemas/Car"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          }
+        ]
+      },
+      "CarType": {
+        "type": "string",
+        "enum": [
+          "PERSONAL",
+          "TRUCK",
+          "VAN"
+        ]
+      },
+      "ValidationDummy": {
+        "required": [
+          "notEmptyOrBlank",
+          "notNull"
+        ],
+        "type": "object",
+        "properties": {
+          "notNull": {
+            "type": "string"
+          },
+          "deprecated": {
+            "type": "string",
+            "description": "",
+            "deprecated": true
+          },
+          "minMax": {
+            "maximum": 7,
+            "minimum": 3,
+            "type": "integer",
+            "format": "int32"
+          },
+          "positive": {
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          "stringSize": {
+            "maxLength": 10,
+            "minLength": 2,
+            "type": "string"
+          },
+          "positiveOrZero": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "negative": {
+            "maximum": 0,
+            "exclusiveMaximum": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          "regex": {
+            "pattern": "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "type": "string"
+          },
+          "negativeOrZero": {
+            "maximum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "notEmptyOrBlank": {
+            "type": "string"
+          },
+          "stringSizeOnlyMax": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string"
+          },
+          "decimalRange": {
+            "maximum": 2.5,
+            "minimum": 1.05,
+            "type": "number",
+            "format": "double"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "javaDeprecated": {
+            "type": "string",
+            "deprecated": true
+          }
+        }
+      },
+      "Product": {
+        "required": [
+          "amount",
+          "price"
+        ],
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "car": "Car",
+            "laptop": "Laptop"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          }
+        ]
+      },
+      "ListDummy": {
+        "type": "object",
+        "properties": {
+          "cars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Car"
+            }
+          },
+          "enums": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CarType"
+            }
+          },
+          "products": {
+            "maxItems": 6,
+            "minItems": 2,
+            "type": "array",
+            "items": {
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "car": "Car",
+                  "laptop": "Laptop"
+                }
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Laptop"
+                },
+                {
+                  "$ref": "#/components/schemas/Car"
+                }
+              ]
+            }
+          },
+          "integers": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "CustomerInventory": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Customer"
+            }
+          }
+        }
+      },
+      "ArrayDummy": {
+        "type": "object",
+        "properties": {
+          "primitiveIntegers": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "cars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Car"
+            }
+          },
+          "integers": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "car": "Car",
+                  "laptop": "Laptop"
+                }
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Laptop"
+                },
+                {
+                  "$ref": "#/components/schemas/Car"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

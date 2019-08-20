@@ -1,19 +1,43 @@
 package org.spring.openapi.schema.generator;
 
-import io.github.classgraph.*;
-import io.swagger.v3.oas.models.media.*;
+import java.lang.annotation.Annotation;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spring.openapi.schema.generator.model.InheritanceInfo;
 
-import javax.validation.constraints.*;
-import java.lang.annotation.Annotation;
-import java.math.BigDecimal;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import io.github.classgraph.ArrayTypeSignature;
+import io.github.classgraph.BaseTypeSignature;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ClassRefTypeSignature;
+import io.github.classgraph.FieldInfo;
+import io.github.classgraph.FieldInfoList;
+import io.github.classgraph.TypeArgument;
+import io.github.classgraph.TypeSignature;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -24,7 +48,7 @@ public class ComponentSchemaTransformer {
 
     private static final String COMPONENT_REF_PREFIX = "#/components/schemas/";
 
-    public Schema transformSimpleSchema(ClassInfo classInfo, Map<String, InheritanceInfo> inheritanceMap) {
+    public Schema transformSimpleSchema(ClassInfo classInfo, Map<String, InheritanceInfo> inheritanceMap, List<String> modelPackages) {
         if (classInfo.isEnum()) {
             return createEnumSchema(classInfo.loadClass().getEnumConstants());
         }
@@ -37,15 +61,34 @@ public class ComponentSchemaTransformer {
         if (!requiredFields.isEmpty()) {
             schema.setRequired(requiredFields);
         }
-        if (inheritanceMap.containsKey(classInfo.getSimpleName())) {
-            schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getSimpleName())));
+        if (inheritanceMap.containsKey(classInfo.getName())) {
+            schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getName())));
         }
         if (classInfo.getSuperclass() != null) {
-            Schema<?> parentClass = new Schema<>();
-            parentClass.set$ref(COMPONENT_REF_PREFIX + classInfo.getSuperclass().getSimpleName());
-            schema.setAllOf(Collections.singletonList(parentClass));
+            if (isInPackagesToBeScanned(classInfo.getSuperclass(), modelPackages)) {
+                Schema<?> parentClass = new Schema<>();
+                parentClass.set$ref(COMPONENT_REF_PREFIX + classInfo.getSuperclass().getSimpleName());
+                schema.setAllOf(Collections.singletonList(parentClass));
+            } else {
+                traverseAndAddProperties(schema, inheritanceMap, classInfo.getSuperclass());
+            }
         }
         return schema;
+    }
+
+    private void traverseAndAddProperties(ComposedSchema schema, Map<String, InheritanceInfo> inheritanceMap, ClassInfo superclass) {
+        List<String> requiredFields = new ArrayList<>();
+        schema.getProperties().putAll(getClassProperties(superclass.getDeclaredFieldInfo(), inheritanceMap, requiredFields));
+        if (!requiredFields.isEmpty()) {
+            schema.setRequired(requiredFields);
+        }
+        if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackageName())) {
+            traverseAndAddProperties(schema, inheritanceMap, superclass.getSuperclass());
+        }
+    }
+
+    private boolean isInPackagesToBeScanned(ClassInfo classInfo, List<String> modelPackages) {
+        return modelPackages.stream().anyMatch(pkg -> classInfo.getPackageName().startsWith(pkg));
     }
 
     private Discriminator createDiscriminator(InheritanceInfo inheritanceInfo) {
@@ -136,9 +179,7 @@ public class ComponentSchemaTransformer {
     }
 
     private boolean isRequired(Annotation[] annotations) {
-        return Stream.of(annotations)
-                .anyMatch(annotation -> annotation instanceof NotNull || annotation instanceof NotEmpty
-                        || annotation instanceof NotBlank);
+        return Stream.of(annotations).anyMatch(annotation -> annotation instanceof NotNull);
     }
 
     private Schema parseArraySignature(TypeSignature elementTypeSignature,
@@ -155,10 +196,11 @@ public class ComponentSchemaTransformer {
                 arraySchema.setItems(itemSchema);
                 return arraySchema;
             }
-            String simpleElementClassName = classRefTypeSignature.getClassInfo().getSimpleName();
+            Class<?> clazz = classRefTypeSignature.loadClass();
+            String className = clazz.getName();
             // is inheritance needed
-            if (inheritanceMap.containsKey(simpleElementClassName)) {
-                InheritanceInfo inheritanceInfo = inheritanceMap.get(simpleElementClassName);
+            if (inheritanceMap.containsKey(className)) {
+                InheritanceInfo inheritanceInfo = inheritanceMap.get(className);
                 ComposedSchema itemSchema = new ComposedSchema();
                 itemSchema.setOneOf(createOneOf(inheritanceInfo));
                 itemSchema.setDiscriminator(createDiscriminator(inheritanceInfo));
@@ -167,7 +209,7 @@ public class ComponentSchemaTransformer {
             }
             // else do ref
             Schema<?> itemSchema = new Schema<>();
-            itemSchema.set$ref(COMPONENT_REF_PREFIX + simpleElementClassName);
+            itemSchema.set$ref(COMPONENT_REF_PREFIX + clazz.getSimpleName());
             arraySchema.setItems(itemSchema);
             return arraySchema;
         } else if (elementTypeSignature instanceof BaseTypeSignature) {
@@ -212,7 +254,7 @@ public class ComponentSchemaTransformer {
             case "java.time.LocalTime":
                 return createStringSchema("date-time", annotations);
             default:
-                return createRefSchema(typeSignature.getClassInfo().getSimpleName(), inheritanceMap);
+                return createRefSchema(typeSignature, inheritanceMap);
         }
     }
 
@@ -225,15 +267,16 @@ public class ComponentSchemaTransformer {
         return parseArraySignature(typeArguments.get(0).getTypeSignature(), inheritanceMap, annotations);
     }
 
-    private ComposedSchema createRefSchema(String simpleClassName, Map<String, InheritanceInfo> inheritanceMap) {
+    private ComposedSchema createRefSchema(ClassRefTypeSignature typeSignature, Map<String, InheritanceInfo> inheritanceMap) {
         ComposedSchema schema = new ComposedSchema();
-        if (inheritanceMap.containsKey(simpleClassName)) {
-            InheritanceInfo inheritanceInfo = inheritanceMap.get(simpleClassName);
+        Class<?> clazz = typeSignature.loadClass();
+        if (inheritanceMap.containsKey(clazz.getName())) {
+            InheritanceInfo inheritanceInfo = inheritanceMap.get(clazz.getName());
             schema.setOneOf(createOneOf(inheritanceInfo));
             schema.setDiscriminator(createDiscriminator(inheritanceInfo));
             return schema;
         }
-        schema.set$ref(COMPONENT_REF_PREFIX + simpleClassName);
+        schema.set$ref(COMPONENT_REF_PREFIX + clazz.getSimpleName());
         return schema;
     }
 
@@ -307,9 +350,7 @@ public class ComponentSchemaTransformer {
     }
 
     private void applyStringAnnotations(Schema<?> schema, Annotation annotation) {
-        if (annotation instanceof Email) {
-            schema.format("email");
-        } else if (annotation instanceof Pattern) {
+        if (annotation instanceof Pattern) {
             schema.pattern(((Pattern) annotation).regexp());
         } else if (annotation instanceof Size) {
             schema.minLength(((Size) annotation).min());
@@ -326,16 +367,6 @@ public class ComponentSchemaTransformer {
             schema.setMinimum(BigDecimal.valueOf(((Min) annotation).value()));
         } else if (annotation instanceof Max) {
             schema.setMaximum(BigDecimal.valueOf(((Max) annotation).value()));
-        } else if (annotation instanceof Positive) {
-            schema.setMinimum(BigDecimal.ZERO);
-            schema.setExclusiveMinimum(true);
-        } else if (annotation instanceof PositiveOrZero) {
-            schema.setMinimum(BigDecimal.ZERO);
-        } else if (annotation instanceof Negative) {
-            schema.setMaximum(BigDecimal.ZERO);
-            schema.setExclusiveMaximum(true);
-        } else if (annotation instanceof NegativeOrZero) {
-            schema.setMaximum(BigDecimal.ZERO);
         }
     }
 

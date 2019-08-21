@@ -1,27 +1,28 @@
 package org.spring.openapi.schema.generator.plugin;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.oas.models.OpenAPI;
+
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.spring.openapi.schema.generator.OpenAPIGenerator;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import io.swagger.v3.oas.models.OpenAPI;
 
 import static java.util.Collections.singletonList;
 
 public class OpenAPIGeneratorTest {
 
     private static final OpenAPIGenerator openAPIGenerator = new OpenAPIGenerator(
-            singletonList("org.spring.openapi.schema.generator.plugin.model"),
-            singletonList("org.spring.openapi.schema.generator.plugin.controller"),
-            "target/openapi"
+            singletonList("org.spring.openapi.schema.generator.plugin.model.*"),
+            singletonList("org.spring.openapi.schema.generator.plugin.controller.*")
     );
 
     @Test

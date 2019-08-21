@@ -1,9 +1,16 @@
 package org.spring.openapi.schema.generator.plugin.model.dummy;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import javax.validation.constraints.*;
 import java.math.BigDecimal;
+
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class ValidationDummy {
 
@@ -11,34 +18,15 @@ public class ValidationDummy {
     @DecimalMax("2.5")
     private BigDecimal decimalRange;
 
-    @Email
-    private String email;
-
     @Min(3)
     @Max(7)
     private Integer minMax;
-
-    @Negative
-    private Integer negative;
-
-    @NegativeOrZero
-    private Integer negativeOrZero;
-
-    @NotEmpty
-    @NotBlank
-    private String notEmptyOrBlank;
 
     @NotNull
     private String notNull;
 
     @Pattern(regexp = "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b")
     private String regex;
-
-    @Positive
-    private Integer positive;
-
-    @PositiveOrZero
-    private Integer positiveOrZero;
 
     @Size(min = 2, max = 10)
     private String stringSize;
@@ -60,44 +48,12 @@ public class ValidationDummy {
         this.decimalRange = decimalRange;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public Integer getMinMax() {
         return minMax;
     }
 
     public void setMinMax(Integer minMax) {
         this.minMax = minMax;
-    }
-
-    public Integer getNegative() {
-        return negative;
-    }
-
-    public void setNegative(Integer negative) {
-        this.negative = negative;
-    }
-
-    public Integer getNegativeOrZero() {
-        return negativeOrZero;
-    }
-
-    public void setNegativeOrZero(Integer negativeOrZero) {
-        this.negativeOrZero = negativeOrZero;
-    }
-
-    public String getNotEmptyOrBlank() {
-        return notEmptyOrBlank;
-    }
-
-    public void setNotEmptyOrBlank(String notEmptyOrBlank) {
-        this.notEmptyOrBlank = notEmptyOrBlank;
     }
 
     public String getNotNull() {
@@ -114,22 +70,6 @@ public class ValidationDummy {
 
     public void setRegex(String regex) {
         this.regex = regex;
-    }
-
-    public Integer getPositive() {
-        return positive;
-    }
-
-    public void setPositive(Integer positive) {
-        this.positive = positive;
-    }
-
-    public Integer getPositiveOrZero() {
-        return positiveOrZero;
-    }
-
-    public void setPositiveOrZero(Integer positiveOrZero) {
-        this.positiveOrZero = positiveOrZero;
     }
 
     public String getStringSize() {

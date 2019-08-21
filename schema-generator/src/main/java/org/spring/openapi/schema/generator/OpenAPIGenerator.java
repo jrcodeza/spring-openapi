@@ -1,20 +1,30 @@
 package org.spring.openapi.schema.generator;
 
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.ScanResult;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spring.openapi.schema.generator.annotations.OpenApiIgnore;
+import org.spring.openapi.schema.generator.model.GenerationContext;
+import org.spring.openapi.schema.generator.model.InheritanceInfo;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.type.filter.RegexPatternTypeFilter;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spring.openapi.schema.generator.model.InheritanceInfo;
-
-import java.lang.annotation.Annotation;
-import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
@@ -23,25 +33,24 @@ public class OpenAPIGenerator {
 
     private static Logger logger = LoggerFactory.getLogger(OpenAPIGenerator.class);
 
-    private static final String OPEN_API_IGNORE_ANNOTATION =
-            "org.spring.openapi.schema.generator.annotations.OpenApiIgnore";
+    private static final String DEFAULT_DISCRIMINATOR_NAME = "type";
 
     private List<String> modelPackages;
     private List<String> controllerBasePackages;
-    private String outputDirectory;
 
     private ComponentSchemaTransformer componentSchemaTransformer;
 
-    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, String outputDirectory) {
+    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages) {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
-        this.outputDirectory = outputDirectory;
         componentSchemaTransformer = new ComponentSchemaTransformer();
     }
 
     public OpenAPI generate() {
+        logger.info("Starting OpenAPI generation");
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
+        logger.info("OpenAPI generation done!");
         return openAPI;
     }
 
@@ -53,50 +62,74 @@ public class OpenAPIGenerator {
 
     private Map<String, Schema> createSchemas() {
         Map<String, Schema> schemaMap = new HashMap<>();
-        for (String modelPackage : modelPackages) {
-            try (ScanResult scanResult = getClassGraph(modelPackage).scan()) {
-                Map<String, InheritanceInfo> inheritanceMap = new HashMap<>();
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        modelPackages.forEach(modelPackage -> scanner.addIncludeFilter(new RegexPatternTypeFilter(Pattern.compile(modelPackage))));
+
+        List<String> packagesWithoutRegex = removeRegexFormatFromPackages(modelPackages);
+        for (String modelPackage : packagesWithoutRegex) {
+            logger.info("Scanning package=[{}]", modelPackage);
+            Map<String, InheritanceInfo> inheritanceMap = new HashMap<>();
+            for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {
+                logger.info("Scanning class=[{}]", beanDefinition.getBeanClassName());
                 // populating inheritance info
-                for (ClassInfo classInfo : scanResult.getAllClasses()) {
-                    if (inheritanceMap.containsKey(classInfo.getSimpleName()) ||
-                            classInfo.hasAnnotation(OPEN_API_IGNORE_ANNOTATION)) {
-                        continue;
-                    }
-                    getInheritanceInfo(classInfo)
-                            .ifPresent(info -> inheritanceMap.put(classInfo.getSimpleName(), info));
+                Class<?> clazz = getClass(beanDefinition);
+                if (inheritanceMap.containsKey(clazz.getName()) || AnnotationUtils.getAnnotation(clazz, OpenApiIgnore.class) != null) {
+                    continue;
                 }
-                // mapping components
-                for (ClassInfo classInfo : scanResult.getAllClasses()) {
-                    if (schemaMap.containsKey(classInfo.getSimpleName()) ||
-                            classInfo.hasAnnotation(OPEN_API_IGNORE_ANNOTATION)) {
-                        continue;
-                    }
-                    schemaMap.put(
-                            classInfo.getSimpleName(),
-                            componentSchemaTransformer.transformSimpleSchema(classInfo, inheritanceMap)
-                    );
-                }
+                getInheritanceInfo(clazz).ifPresent(info -> {
+                    logger.info("Adding entry [{}] to inheritance map", clazz.getName());
+                    inheritanceMap.put(clazz.getName(), info);
+                });
             }
+            for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {
+                Class<?> clazz = getClass(beanDefinition);
+                if (schemaMap.containsKey(clazz.getSimpleName()) || AnnotationUtils.getAnnotation(clazz, OpenApiIgnore.class) != null) {
+                    continue;
+                }
+                GenerationContext generationContext = new GenerationContext(inheritanceMap, packagesWithoutRegex);
+                schemaMap.put(clazz.getSimpleName(), componentSchemaTransformer.transformSimpleSchema(clazz, generationContext));
+            }
+
         }
         return schemaMap;
     }
 
-    private Optional<InheritanceInfo> getInheritanceInfo(ClassInfo classInfo) {
-        if (classInfo.hasAnnotation("com.fasterxml.jackson.annotation.JsonSubTypes")) {
-            Class<?> clazz = classInfo.loadClass();
+    private Class<?> getClass(BeanDefinition beanDefinition) {
+        try {
+            return Class.forName(beanDefinition.getBeanClassName());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private Optional<InheritanceInfo> getInheritanceInfo(Class<?> clazz) {
+        if (AnnotationUtils.getAnnotation(clazz, JsonSubTypes.class) != null) {
             List<Annotation> annotations = unmodifiableList(asList(clazz.getAnnotations()));
             JsonTypeInfo jsonTypeInfo = annotations.stream()
                     .filter(annotation -> annotation instanceof JsonTypeInfo)
                     .map(annotation -> (JsonTypeInfo) annotation)
                     .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("JsonSubTypes has to be found"));
+                    .orElse(null);
 
             InheritanceInfo inheritanceInfo = new InheritanceInfo();
-            inheritanceInfo.setDiscriminatorFieldName(jsonTypeInfo.property());
+            inheritanceInfo.setDiscriminatorFieldName(getDiscriminatorName(jsonTypeInfo));
             inheritanceInfo.setDiscriminatorClassMap(scanJacksonInheritance(annotations));
             return Optional.of(inheritanceInfo);
         }
         return Optional.empty();
+    }
+
+    private String getDiscriminatorName(JsonTypeInfo jsonTypeInfo) {
+        if (jsonTypeInfo == null) {
+            return DEFAULT_DISCRIMINATOR_NAME;
+        }
+        return jsonTypeInfo.property();
+    }
+
+    private List<String> removeRegexFormatFromPackages(List<String> modelPackages) {
+        return modelPackages.stream()
+                .map(modelPackage -> modelPackage.replace(".*", ""))
+                .collect(Collectors.toList());
     }
 
     private Map<String, String> scanJacksonInheritance(List<Annotation> annotations) {
@@ -105,13 +138,6 @@ public class OpenAPIGenerator {
                 .map(annotation -> (JsonSubTypes) annotation)
                 .flatMap(jsonSubTypesMapped -> Arrays.stream(jsonSubTypesMapped.value()))
                 .collect(Collectors.toMap(o -> o.value().getSimpleName(), JsonSubTypes.Type::name));
-    }
-
-    private ClassGraph getClassGraph(String modelPackage) {
-        return new ClassGraph()
-                .verbose()
-                .enableAllInfo()
-                .whitelistPackages(modelPackage);
     }
 
 }

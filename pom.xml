@@ -18,7 +18,6 @@
     </modules>
 
     <properties>
-
         <maven-plugin-api.version>3.3.9</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.5.0</maven-plugin-annotations.version>
         <swagger-api.version>2.0.8</swagger-api.version>
@@ -31,10 +30,22 @@
         <log4j-api.version>2.6.1</log4j-api.version>
         <jsonassert.version>1.5.0</jsonassert.version>
         <commons-io.version>2.6</commons-io.version>
+        <spring-core.version>5.1.9.RELEASE</spring-core.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+                <version>${spring-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring-core.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
@@ -61,12 +72,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-compat</artifactId>
                 <version>${maven.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.github.classgraph</groupId>
-                <artifactId>classgraph</artifactId>
-                <version>${classgraph.version}</version>
             </dependency>
 
             <dependency>

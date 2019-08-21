@@ -1,37 +1,38 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.apache.maven.plugin.my.unit</groupId>
-    <artifactId>generate-open-api-schema-mojo-test</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    <name>Test GenerateOpenApiSchemaMojo Standard</name>
+	<groupId>org.apache.maven.plugin.my.unit</groupId>
+	<artifactId>generate-open-api-schema-mojo-test</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>Test GenerateOpenApiSchemaMojo Standard</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>spring-openapi-schema-generator-plugin</artifactId>
-                <configuration>
-                    <modelPackages>
-                        <modelPackage>org.spring.openapi.schema.generator.plugin.model</modelPackage>
-                    </modelPackages>
-                    <controllerBasePackages>
-                        <controllerBasePackage>org.spring.openapi.schema.generator.plugin.controller</controllerBasePackage>
-                    </controllerBasePackages>
-                    <outputDirectory>target/openapi</outputDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.spring.openapi</groupId>
+				<artifactId>spring-openapi-schema-generator-plugin</artifactId>
+				<configuration>
+					<modelPackages>
+						<modelPackage>org.spring.openapi.schema.generator.test.model.*</modelPackage>
+					</modelPackages>
+					<controllerBasePackages>
+						<controllerBasePackage>org.spring.openapi.schema.generator.controller.*</controllerBasePackage>
+					</controllerBasePackages>
+					<outputDirectory>target/openapi</outputDirectory>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

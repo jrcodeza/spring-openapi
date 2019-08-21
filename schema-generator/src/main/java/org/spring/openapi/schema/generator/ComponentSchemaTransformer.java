@@ -1,19 +1,46 @@
 package org.spring.openapi.schema.generator;
 
-import io.github.classgraph.*;
-import io.swagger.v3.oas.models.media.*;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spring.openapi.schema.generator.model.InheritanceInfo;
-
-import javax.validation.constraints.*;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
-import java.util.*;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spring.openapi.schema.generator.model.GenerationContext;
+import org.spring.openapi.schema.generator.model.InheritanceInfo;
+import org.springframework.util.ReflectionUtils;
+
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -24,28 +51,51 @@ public class ComponentSchemaTransformer {
 
     private static final String COMPONENT_REF_PREFIX = "#/components/schemas/";
 
-    public Schema transformSimpleSchema(ClassInfo classInfo, Map<String, InheritanceInfo> inheritanceMap) {
-        if (classInfo.isEnum()) {
-            return createEnumSchema(classInfo.loadClass().getEnumConstants());
+    public Schema transformSimpleSchema(Class<?> clazz, GenerationContext generationContext) {
+        if (clazz.isEnum()) {
+            return createEnumSchema(clazz.getEnumConstants());
         }
         List<String> requiredFields = new ArrayList<>();
 
-        ComposedSchema schema = new ComposedSchema();
+        Schema<?> schema = new Schema<>();
         schema.setType("object");
-        schema.setProperties(getClassProperties(classInfo.getDeclaredFieldInfo(), inheritanceMap, requiredFields));
+        schema.setProperties(getClassProperties(clazz, generationContext, requiredFields));
 
         if (!requiredFields.isEmpty()) {
             schema.setRequired(requiredFields);
         }
-        if (inheritanceMap.containsKey(classInfo.getSimpleName())) {
-            schema.setDiscriminator(createDiscriminator(inheritanceMap.get(classInfo.getSimpleName())));
+        if (generationContext.getInheritanceMap().containsKey(clazz.getName())) {
+            schema.setDiscriminator(createDiscriminator(generationContext.getInheritanceMap().get(clazz.getName())));
         }
-        if (classInfo.getSuperclass() != null) {
-            Schema<?> parentClass = new Schema<>();
-            parentClass.set$ref(COMPONENT_REF_PREFIX + classInfo.getSuperclass().getSimpleName());
-            schema.setAllOf(Collections.singletonList(parentClass));
+        if (clazz.getSuperclass() != null && isInPackagesToBeScanned(clazz.getSuperclass(), generationContext)) {
+            return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
         }
         return schema;
+    }
+
+    private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
+        if (superclass.getAnnotation(JsonSubTypes.class) == null) {
+            List<String> requiredFields = new ArrayList<>();
+            schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
+            if (!requiredFields.isEmpty()) {
+                schema.setRequired(requiredFields);
+            }
+            if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
+                return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass());
+            }
+            return schema;
+        } else {
+            Schema<?> parentClassSchema = new Schema<>();
+            parentClassSchema.set$ref(COMPONENT_REF_PREFIX + superclass.getSimpleName());
+
+            ComposedSchema composedSchema = new ComposedSchema();
+            composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
+            return composedSchema;
+        }
+    }
+
+    private boolean isInPackagesToBeScanned(Class<?> clazz, GenerationContext generationContext) {
+        return generationContext.getModelPackages().stream().anyMatch(pkg -> clazz.getPackage().getName().startsWith(pkg));
     }
 
     private Discriminator createDiscriminator(InheritanceInfo inheritanceInfo) {
@@ -59,61 +109,54 @@ public class ComponentSchemaTransformer {
         return discriminator;
     }
 
-    private Map<String, Schema> getClassProperties(FieldInfoList declaredFieldInfo,
-                                                   Map<String, InheritanceInfo> inheritanceMap,
-                                                   List<String> requiredFields) {
+    private Map<String, Schema> getClassProperties(Class<?> clazz, GenerationContext generationContext, List<String> requiredFields) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
-        for (FieldInfo fieldInfo : declaredFieldInfo) {
-            getFieldSchema(fieldInfo, inheritanceMap, requiredFields)
-                    .ifPresent(schema -> classPropertyMap.put(fieldInfo.getName(), schema));
-        }
+        ReflectionUtils.doWithLocalFields(clazz,
+                field -> getFieldSchema(field, generationContext, requiredFields).ifPresent(schema -> classPropertyMap.put(field.getName(), schema))
+        );
         return classPropertyMap;
     }
 
-    private Optional<Schema> getFieldSchema(FieldInfo fieldInfo, Map<String, InheritanceInfo> inheritanceMap,
-                                            List<String> requiredFields) {
-        TypeSignature typeSignature = fieldInfo.getTypeSignatureOrTypeDescriptor();
-        Annotation[] annotations = fieldInfo.loadClassAndGetField().getAnnotations();
+    private Optional<Schema> getFieldSchema(Field field, GenerationContext generationContext, List<String> requiredFields) {
+        Class<?> typeSignature = field.getType();
+        Annotation[] annotations = field.getAnnotations();
         if (isRequired(annotations)) {
-            requiredFields.add(fieldInfo.getName());
+            requiredFields.add(field.getName());
         }
 
-        if (typeSignature instanceof BaseTypeSignature) {
-            return createBaseTypeSchema(fieldInfo, requiredFields, (BaseTypeSignature) typeSignature, annotations);
-        } else if (typeSignature instanceof ArrayTypeSignature) {
-            return createArrayTypeSchema(inheritanceMap, (ArrayTypeSignature) typeSignature, annotations);
-        } else if (typeSignature instanceof ClassRefTypeSignature) {
-            return createClassRefSchema(inheritanceMap, (ClassRefTypeSignature) typeSignature, annotations);
+        if (typeSignature.isPrimitive()) {
+            return createBaseTypeSchema(field, requiredFields, annotations);
+        } else if (typeSignature.isArray()) {
+            return createArrayTypeSchema(generationContext, typeSignature, annotations);
+        } else if (typeSignature.isAssignableFrom(List.class)) {
+            if (field.getGenericType() instanceof ParameterizedType) {
+                Class<?> listGenericParameter = (Class<?>)((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+                return Optional.of(parseArraySignature(listGenericParameter, generationContext, annotations));
+            }
+            return Optional.empty();
+        } else {
+            return createClassRefSchema(generationContext, typeSignature, annotations);
         }
-        return Optional.empty();
     }
 
-    private Optional<Schema> createClassRefSchema(Map<String, InheritanceInfo> inheritanceMap,
-                                                  ClassRefTypeSignature typeSignature, Annotation[] annotations) {
-        Schema<?> schema = parseClassRefTypeSignature(
-                typeSignature, annotations,
-                inheritanceMap
-        );
+    private Optional<Schema> createClassRefSchema(GenerationContext generationContext, Class<?> typeClass, Annotation[] annotations) {
+        Schema<?> schema = parseClassRefTypeSignature(typeClass, annotations, generationContext);
         enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
-    private Optional<Schema> createArrayTypeSchema(Map<String, InheritanceInfo> inheritanceMap,
-                                                   ArrayTypeSignature typeSignature, Annotation[] annotations) {
-        Schema<?> schema = parseArraySignature(
-                typeSignature.getElementTypeSignature(), inheritanceMap,
-                annotations
-        );
+    private Optional<Schema> createArrayTypeSchema(GenerationContext generationContext, Class<?> typeSignature, Annotation[] annotations) {
+        Class<?> arrayComponentType = typeSignature.getComponentType();
+        Schema<?> schema = parseArraySignature(arrayComponentType, generationContext, annotations);
         enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
-    private Optional<Schema> createBaseTypeSchema(FieldInfo fieldInfo, List<String> requiredFields,
-                                                  BaseTypeSignature typeSignature, Annotation[] annotations) {
-        if (!requiredFields.contains(fieldInfo.getName())) {
-            requiredFields.add(fieldInfo.getName());
+    private Optional<Schema> createBaseTypeSchema(Field field, List<String> requiredFields, Annotation[] annotations) {
+        if (!requiredFields.contains(field.getName())) {
+            requiredFields.add(field.getName());
         }
-        Schema<?> schema = parseBaseTypeSignature(typeSignature, annotations);
+        Schema<?> schema = parseBaseTypeSignature(field.getType(), annotations);
         enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
@@ -136,18 +179,20 @@ public class ComponentSchemaTransformer {
     }
 
     private boolean isRequired(Annotation[] annotations) {
-        return Stream.of(annotations)
-                .anyMatch(annotation -> annotation instanceof NotNull || annotation instanceof NotEmpty
-                        || annotation instanceof NotBlank);
+        return Stream.of(annotations).anyMatch(annotation -> annotation instanceof NotNull);
     }
 
-    private Schema parseArraySignature(TypeSignature elementTypeSignature,
-                                       Map<String, InheritanceInfo> inheritanceMap, Annotation[] annotations) {
+    private Schema parseArraySignature(Class<?> elementTypeSignature, GenerationContext generationContext, Annotation[] annotations) {
         ArraySchema arraySchema = new ArraySchema();
         Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
-        if (elementTypeSignature instanceof ClassRefTypeSignature) {
-            ClassRefTypeSignature classRefTypeSignature = (ClassRefTypeSignature) elementTypeSignature;
-            String basicLangItemsType = mapBasicLangItemsType(classRefTypeSignature);
+        if (elementTypeSignature.isPrimitive()) {
+            // primitive type like int
+            Schema<?> itemSchema = new Schema<>();
+            itemSchema.setType(mapBaseType(elementTypeSignature));
+            arraySchema.setItems(itemSchema);
+            return arraySchema;
+        } else if (isInPackagesToBeScanned(elementTypeSignature, generationContext) || elementTypeSignature.getPackage().getName().startsWith("java.lang")) {
+            String basicLangItemsType = mapBasicLangItemsType(elementTypeSignature);
             // basic types like Integer or String
             if (basicLangItemsType != null) {
                 Schema<?> itemSchema = new Schema<>();
@@ -155,10 +200,10 @@ public class ComponentSchemaTransformer {
                 arraySchema.setItems(itemSchema);
                 return arraySchema;
             }
-            String simpleElementClassName = classRefTypeSignature.getClassInfo().getSimpleName();
+            String className = elementTypeSignature.getName();
             // is inheritance needed
-            if (inheritanceMap.containsKey(simpleElementClassName)) {
-                InheritanceInfo inheritanceInfo = inheritanceMap.get(simpleElementClassName);
+            if (generationContext.getInheritanceMap().containsKey(className)) {
+                InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(className);
                 ComposedSchema itemSchema = new ComposedSchema();
                 itemSchema.setOneOf(createOneOf(inheritanceInfo));
                 itemSchema.setDiscriminator(createDiscriminator(inheritanceInfo));
@@ -167,73 +212,62 @@ public class ComponentSchemaTransformer {
             }
             // else do ref
             Schema<?> itemSchema = new Schema<>();
-            itemSchema.set$ref(COMPONENT_REF_PREFIX + simpleElementClassName);
-            arraySchema.setItems(itemSchema);
-            return arraySchema;
-        } else if (elementTypeSignature instanceof BaseTypeSignature) {
-            // primitive type like int
-            Schema<?> itemSchema = new Schema<>();
-            itemSchema.setType(mapBaseType((BaseTypeSignature) elementTypeSignature));
+            itemSchema.set$ref(COMPONENT_REF_PREFIX + elementTypeSignature.getSimpleName());
             arraySchema.setItems(itemSchema);
             return arraySchema;
         }
+
+        Schema<?> itemSchema = new Schema<>();
+        itemSchema.setType("object");
+        arraySchema.setItems(itemSchema);
         return arraySchema;
     }
 
-    private Schema parseClassRefTypeSignature(ClassRefTypeSignature typeSignature, Annotation[] annotations,
-                                              Map<String, InheritanceInfo> inheritanceMap) {
-        if (typeSignature.getClassInfo() != null && typeSignature.getClassInfo().isEnum()) {
-            return createEnumSchema(typeSignature.getClassInfo().loadClass().getEnumConstants());
+    private Schema parseClassRefTypeSignature(Class<?> typeClass, Annotation[] annotations, GenerationContext generationContext) {
+        if (typeClass.isEnum()) {
+            return createEnumSchema(typeClass.getEnumConstants());
         }
-        switch (typeSignature.getFullyQualifiedClassName()) {
-            case "java.lang.Byte":
-            case "java.lang.Short":
-            case "java.lang.Integer":
-                return createNumberSchema("integer", "int32", annotations);
-            case "java.lang.Long":
-            case "java.math.BigInteger":
-                return createNumberSchema("integer", "int64", annotations);
-            case "java.lang.Float":
-                return createNumberSchema("number", "float", annotations);
-            case "java.lang.Double":
-            case "java.math.BigDecimal":
-                return createNumberSchema("number", "double", annotations);
-            case "java.lang.Character":
-            case "java.lang.String":
-                return createStringSchema(null, annotations);
-            case "java.lang.Boolean":
-                return createBooleanSchema();
-            case "java.util.List":
-                return createListSchema(typeSignature, inheritanceMap, annotations);
-            case "java.time.LocalDate":
-            case "java.lang.Date":
-                return createStringSchema("date", annotations);
-            case "java.time.LocalDateTime":
-            case "java.time.LocalTime":
-                return createStringSchema("date-time", annotations);
-            default:
-                return createRefSchema(typeSignature.getClassInfo().getSimpleName(), inheritanceMap);
+        if (Byte.class.equals(typeClass) || Short.class.equals(typeClass) || Integer.class.equals(typeClass)) {
+            return createNumberSchema("integer", "int32", annotations);
+        } else if (Long.class.equals(typeClass) || BigInteger.class.equals(typeClass)) {
+            return createNumberSchema("integer", "int64", annotations);
+        } else if (Float.class.equals(typeClass)) {
+            return createNumberSchema("number", "float", annotations);
+        } else if (Double.class.equals(typeClass) || BigDecimal.class.equals(typeClass)) {
+            return createNumberSchema("number", "double", annotations);
+        } else if (Character.class.equals(typeClass) || String.class.equals(typeClass)) {
+            return createStringSchema(null, annotations);
+        } else if (Boolean.class.equals(typeClass)) {
+            return createBooleanSchema();
+        } else if (List.class.equals(typeClass)) {
+            return createListSchema(typeClass, generationContext, annotations);
+        } else if (LocalDate.class.equals(typeClass) || Date.class.equals(typeClass)) {
+            return createStringSchema("date", annotations);
+        } else if (LocalDateTime.class.equals(typeClass) || LocalTime.class.equals(typeClass)) {
+            return createStringSchema("date-time", annotations);
         }
+        return createRefSchema(typeClass, generationContext);
     }
 
-    private Schema createListSchema(ClassRefTypeSignature typeSignature, Map<String, InheritanceInfo> inheritanceMap,
-                                    Annotation[] annotations) {
-        List<TypeArgument> typeArguments = typeSignature.getTypeArguments();
-        if (typeArguments.size() != 1) {
-            throw new IllegalArgumentException("List is expected to have 1 generic type argument");
-        }
-        return parseArraySignature(typeArguments.get(0).getTypeSignature(), inheritanceMap, annotations);
+    private Schema createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
+        return parseArraySignature(typeSignature, generationContext, annotations);
     }
 
-    private ComposedSchema createRefSchema(String simpleClassName, Map<String, InheritanceInfo> inheritanceMap) {
+    private ComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
         ComposedSchema schema = new ComposedSchema();
-        if (inheritanceMap.containsKey(simpleClassName)) {
-            InheritanceInfo inheritanceInfo = inheritanceMap.get(simpleClassName);
-            schema.setOneOf(createOneOf(inheritanceInfo));
-            schema.setDiscriminator(createDiscriminator(inheritanceInfo));
+        if (isInPackagesToBeScanned(typeSignature, generationContext)) {
+            if (generationContext.getInheritanceMap().containsKey(typeSignature.getName())) {
+                InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(typeSignature.getName());
+                schema.setOneOf(createOneOf(inheritanceInfo));
+                schema.setDiscriminator(createDiscriminator(inheritanceInfo));
+                return schema;
+            }
+            schema.set$ref(COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
             return schema;
         }
-        schema.set$ref(COMPONENT_REF_PREFIX + simpleClassName);
+
+        // fallback
+        schema.setType("object");
         return schema;
     }
 
@@ -247,24 +281,21 @@ public class ComponentSchemaTransformer {
                 .collect(Collectors.toList());
     }
 
-    private Schema parseBaseTypeSignature(BaseTypeSignature typeSignature, Annotation[] annotations) {
-        switch (typeSignature.getTypeStr()) {
-            case "byte":
-            case "short":
-            case "int":
-                return createNumberSchema("integer", "int32", annotations);
-            case "long":
-                return createNumberSchema("integer", "int64", annotations);
-            case "float":
-                return createNumberSchema("number", "float", annotations);
-            case "double":
-                return createNumberSchema("number", "double", annotations);
-            case "char":
-                return createStringSchema(null, annotations);
-            case "boolean":
-                return createBooleanSchema();
+    private Schema parseBaseTypeSignature(Class<?> type, Annotation[] annotations) {
+        if (byte.class.equals(type) || short.class.equals(type) || int.class.equals(type)) {
+            return createNumberSchema("integer", "int32", annotations);
+        } else if (long.class.equals(type)) {
+            return createNumberSchema("integer", "int64", annotations);
+        } else if (float.class.equals(type)) {
+            return createNumberSchema("number", "float", annotations);
+        } else if (double.class.equals(type)) {
+            return createNumberSchema("number", "double", annotations);
+        } else if (char.class.equals(type)) {
+            return createStringSchema(null, annotations);
+        } else if (boolean.class.equals(type)) {
+            return createBooleanSchema();
         }
-        logger.info(format("Ignoring unsupported type=[%s]", typeSignature.getTypeStr()));
+        logger.info(format("Ignoring unsupported type=[%s]", type.getSimpleName()));
         return null;
     }
 
@@ -307,9 +338,7 @@ public class ComponentSchemaTransformer {
     }
 
     private void applyStringAnnotations(Schema<?> schema, Annotation annotation) {
-        if (annotation instanceof Email) {
-            schema.format("email");
-        } else if (annotation instanceof Pattern) {
+        if (annotation instanceof Pattern) {
             schema.pattern(((Pattern) annotation).regexp());
         } else if (annotation instanceof Size) {
             schema.minLength(((Size) annotation).min());
@@ -326,65 +355,41 @@ public class ComponentSchemaTransformer {
             schema.setMinimum(BigDecimal.valueOf(((Min) annotation).value()));
         } else if (annotation instanceof Max) {
             schema.setMaximum(BigDecimal.valueOf(((Max) annotation).value()));
-        } else if (annotation instanceof Positive) {
-            schema.setMinimum(BigDecimal.ZERO);
-            schema.setExclusiveMinimum(true);
-        } else if (annotation instanceof PositiveOrZero) {
-            schema.setMinimum(BigDecimal.ZERO);
-        } else if (annotation instanceof Negative) {
-            schema.setMaximum(BigDecimal.ZERO);
-            schema.setExclusiveMaximum(true);
-        } else if (annotation instanceof NegativeOrZero) {
-            schema.setMaximum(BigDecimal.ZERO);
         }
     }
 
-    private String mapBasicLangItemsType(ClassRefTypeSignature classRefTypeSignature) {
-        switch (classRefTypeSignature.getFullyQualifiedClassName()) {
-            case "java.lang.Byte":
-            case "java.lang.Short":
-            case "java.lang.Integer":
-            case "java.lang.Long":
-            case "java.math.BigInteger":
-                return "integer";
-            case "java.lang.Float":
-            case "java.lang.Double":
-            case "java.math.BigDecimal":
-                return "number";
-            case "java.lang.Character":
-            case "java.lang.String":
-            case "java.time.LocalDate":
-            case "java.lang.Date":
-            case "java.time.LocalDateTime":
-            case "java.time.LocalTime":
-                return "string";
-            case "java.lang.Boolean":
-                return "boolean";
-            case "java.util.List":
-                throw new IllegalArgumentException("Nested List types are not supported"
-                        + classRefTypeSignature.getBaseClassName()
-                );
-            default:
-                return null;
+    private String mapBasicLangItemsType(Class<?> classRefTypeSignature) {
+        if (Byte.class.equals(classRefTypeSignature) || Short.class.equals(classRefTypeSignature) || Integer.class.equals(classRefTypeSignature)
+                || Long.class.equals(classRefTypeSignature) || BigInteger.class.equals(classRefTypeSignature)) {
+            return "integer";
+        } else if (Float.class.equals(classRefTypeSignature) || Double.class.equals(classRefTypeSignature) || BigDecimal.class.equals(classRefTypeSignature)) {
+            return "number";
+        } else if (Character.class.equals(classRefTypeSignature) || String.class.equals(classRefTypeSignature) || LocalDate.class.equals(classRefTypeSignature)
+                || Date.class.equals(classRefTypeSignature) || LocalDateTime.class.equals(classRefTypeSignature)
+                || LocalTime.class.equals(classRefTypeSignature)) {
+            return "string";
+        } else if (Boolean.class.equals(classRefTypeSignature)) {
+            return "boolean";
+        } else if (List.class.equals(classRefTypeSignature)) {
+            throw new IllegalArgumentException("Nested List types are not supported"
+                    + classRefTypeSignature.getName()
+            );
         }
+        return null;
     }
 
-    private String mapBaseType(BaseTypeSignature elementTypeSignature) {
-        switch (elementTypeSignature.getTypeStr()) {
-            case "byte":
-            case "short":
-            case "int":
-            case "long":
-                return "integer";
-            case "float":
-            case "double":
-                return "number";
-            case "char":
-                return "string";
-            case "boolean":
-                return "boolean";
+    private String mapBaseType(Class<?> elementTypeSignature) {
+        if (byte.class.equals(elementTypeSignature) || short.class.equals(elementTypeSignature) || int.class.equals(elementTypeSignature)
+                || long.class.equals(elementTypeSignature)) {
+            return "integer";
+        } else if (float.class.equals(elementTypeSignature) || double.class.equals(elementTypeSignature)) {
+            return "number";
+        } else if (char.class.equals(elementTypeSignature)) {
+            return "string";
+        } else if (boolean.class.equals(elementTypeSignature)) {
+            return "boolean";
         }
-        throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getTypeStr()));
+        throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getSimpleName()));
     }
 
 }

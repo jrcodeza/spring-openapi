@@ -67,30 +67,30 @@ public class ComponentSchemaTransformer {
         if (generationContext.getInheritanceMap().containsKey(clazz.getName())) {
             schema.setDiscriminator(createDiscriminator(generationContext.getInheritanceMap().get(clazz.getName())));
         }
-        if (clazz.getSuperclass() != null && isInPackagesToBeScanned(clazz.getSuperclass(), generationContext)) {
-            return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
+        if (clazz.getSuperclass() != null) {
+            if (isInPackagesToBeScanned(clazz.getSuperclass(), generationContext)) {
+                Schema<?> parentClassSchema = new Schema<>();
+                parentClassSchema.set$ref(COMPONENT_REF_PREFIX + clazz.getSuperclass().getSimpleName());
+
+                ComposedSchema composedSchema = new ComposedSchema();
+                composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
+                return composedSchema;
+            } else {
+                traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
+            }
         }
         return schema;
     }
 
-    private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
-        if (superclass.getAnnotation(JsonSubTypes.class) == null) {
-            List<String> requiredFields = new ArrayList<>();
-            schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
-            if (!requiredFields.isEmpty()) {
-                schema.setRequired(requiredFields);
-            }
-            if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
-                return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass());
-            }
-            return schema;
-        } else {
-            Schema<?> parentClassSchema = new Schema<>();
-            parentClassSchema.set$ref(COMPONENT_REF_PREFIX + superclass.getSimpleName());
+    private void traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
+        List<String> requiredFields = new ArrayList<>();
 
-            ComposedSchema composedSchema = new ComposedSchema();
-            composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
-            return composedSchema;
+        schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
+        if (!requiredFields.isEmpty()) {
+            schema.setRequired(requiredFields);
+        }
+        if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
+            traverseAndAddProperties(schema, generationContext, superclass.getSuperclass());
         }
     }
 

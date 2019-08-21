@@ -3,42 +3,43 @@
   "components": {
     "schemas": {
       "Order": {
-        "required": [
-          "id"
-        ],
-        "type": "object",
-        "properties": {
-          "dateTime": {
-            "type": "string",
-            "format": "date-time"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
           },
-          "id": {
-            "type": "string"
-          },
-          "customer": {
-            "$ref": "#/components/schemas/Customer"
-          },
-          "products": {
-            "type": "array",
-            "items": {
-              "discriminator": {
-                "propertyName": "type",
-                "mapping": {
-                  "car": "Car",
-                  "laptop": "Laptop"
-                }
+          {
+            "type": "object",
+            "properties": {
+              "dateTime": {
+                "type": "string",
+                "format": "date-time"
               },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/Laptop"
-                },
-                {
-                  "$ref": "#/components/schemas/Car"
+              "customer": {
+                "$ref": "#/components/schemas/Customer"
+              },
+              "products": {
+                "type": "array",
+                "items": {
+                  "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                      "car": "Car",
+                      "laptop": "Laptop"
+                    }
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Laptop"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Car"
+                    }
+                  ]
                 }
-              ]
+              }
             }
           }
-        }
+        ]
       },
       "Entity": {
         "required": [
@@ -109,37 +110,41 @@
         ]
       },
       "Customer": {
-        "required": [
-          "id"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
           },
-          "vip": {
-            "type": "boolean"
-          },
-          "topCustomerProduct": {
-            "description": "Testing description",
-            "deprecated": false,
-            "discriminator": {
-              "propertyName": "type",
-              "mapping": {
-                "car": "Car",
-                "laptop": "Laptop"
-              }
-            },
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/Laptop"
+          {
+            "required": [
+              "vip"
+            ],
+            "type": "object",
+            "properties": {
+              "vip": {
+                "type": "boolean"
               },
-              {
-                "$ref": "#/components/schemas/Car"
+              "topCustomerProduct": {
+                "description": "Testing description",
+                "deprecated": false,
+                "discriminator": {
+                  "propertyName": "type",
+                  "mapping": {
+                    "car": "Car",
+                    "laptop": "Laptop"
+                  }
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Laptop"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Car"
+                  }
+                ]
               }
-            ]
+            }
           }
-        }
+        ]
       },
       "CarType": {
         "type": "string",
@@ -196,30 +201,35 @@
         }
       },
       "Product": {
-        "required": [
-          "id"
-        ],
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "integer",
-            "format": "int32"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
           },
-          "price": {
-            "type": "number",
-            "format": "double"
-          },
-          "id": {
-            "type": "string"
+          {
+            "required": [
+              "amount",
+              "price"
+            ],
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "price": {
+                "type": "number",
+                "format": "double"
+              }
+            },
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "car": "Car",
+                "laptop": "Laptop"
+              }
+            }
           }
-        },
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "car": "Car",
-            "laptop": "Laptop"
-          }
-        }
+        ]
       },
       "ListDummy": {
         "type": "object",

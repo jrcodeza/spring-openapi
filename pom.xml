@@ -14,6 +14,7 @@
 
     <modules>
         <module>schema-generator</module>
+        <module>client-generator</module>
         <module>schema-generator-plugin</module>
     </modules>
 
@@ -31,6 +32,7 @@
         <jsonassert.version>1.5.0</jsonassert.version>
         <commons-io.version>2.6</commons-io.version>
         <spring-core.version>5.1.9.RELEASE</spring-core.version>
+        <javapoet.version>1.11.1</javapoet.version>
     </properties>
 
     <dependencyManagement>
@@ -88,6 +90,12 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-integration</artifactId>
                 <version>${swagger-api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup</groupId>
+                <artifactId>javapoet</artifactId>
+                <version>${javapoet.version}</version>
             </dependency>
 
             <dependency>

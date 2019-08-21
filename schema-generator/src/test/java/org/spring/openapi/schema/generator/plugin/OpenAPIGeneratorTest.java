@@ -21,8 +21,8 @@ import static java.util.Collections.singletonList;
 public class OpenAPIGeneratorTest {
 
     private static final OpenAPIGenerator openAPIGenerator = new OpenAPIGenerator(
-            singletonList("org.spring.openapi.schema.generator.plugin.model"),
-            singletonList("org.spring.openapi.schema.generator.plugin.controller")
+            singletonList("org.spring.openapi.schema.generator.plugin.model.*"),
+            singletonList("org.spring.openapi.schema.generator.plugin.controller.*")
     );
 
     @Test

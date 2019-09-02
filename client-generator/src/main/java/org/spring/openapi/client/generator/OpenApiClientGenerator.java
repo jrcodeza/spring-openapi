@@ -8,12 +8,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Modifier;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
 
@@ -22,6 +25,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
+
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
 public class OpenApiClientGenerator {
 
@@ -50,7 +55,9 @@ public class OpenApiClientGenerator {
 		if (schema.getDiscriminator() != null) {
 			parseDiscriminator(typeSpecBuilder, schema.getDiscriminator(), targetPackage);
 		}
-
+		if (schema.getProperties() != null) {
+			parseProperties(typeSpecBuilder, schema.getProperties(), targetPackage);
+		}
 		try {
 			JavaFile.builder(targetPackage, typeSpecBuilder.build())
 					.build()
@@ -58,6 +65,60 @@ public class OpenApiClientGenerator {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void parseProperties(TypeSpec.Builder typeSpecBuilder, Map<String, Schema> properties, String targetPackage) {
+		for (Map.Entry<String, Schema> propertyEntry :  properties.entrySet()) {
+			// type or ref or oneOf + (discriminator)
+			Schema innerSchema = propertyEntry.getValue();
+			if (innerSchema.getType() != null) {
+				typeSpecBuilder.addField(parseTypeBasedSchema(propertyEntry.getKey(), innerSchema, targetPackage));
+			} else if (innerSchema.get$ref() != null) {
+
+			} else if (innerSchema.getDiscriminator() != null) {
+
+			} else {
+				throw new IllegalArgumentException("Incorrect schema. One of [type, $ref, discriminator+oneOf] has to be defined in property schema");
+			}
+			FieldSpec.builder(ClassName.get(targetPackage, ))
+		}
+	}
+
+	private FieldSpec parseTypeBasedSchema(String fieldName, Schema innerSchema, String targetPackage) {
+		if (innerSchema.getEnum() != null) {
+
+		}
+		if (equalsIgnoreCase(innerSchema.getType(), "string")) {
+			return getStringBasedSchemaField(fieldName, innerSchema);
+		}
+	}
+
+	private FieldSpec getStringBasedSchemaField(String fieldName, Schema innerSchema) {
+		if (innerSchema.getFormat() == null) {
+			FieldSpec.Builder fieldBuilder = FieldSpec.builder(ClassName.get("java.lang", "String"), fieldName, Modifier.PRIVATE);
+			if (innerSchema.getPattern() != null) {
+				fieldBuilder.addAnnotation(AnnotationSpec.builder(Pattern.class)
+						.addMember("regexp", "$S", innerSchema.getPattern())
+						.build()
+				);
+			}
+			if (innerSchema.getMinLength() != null || innerSchema.getMaxLength() != null) {
+				AnnotationSpec.Builder sizeAnnotationBuilder = AnnotationSpec.builder(Size.class);
+				if (innerSchema.getMinLength() != null) {
+					sizeAnnotationBuilder.addMember("min", "$L", innerSchema.getMinLength());
+				}
+				if (innerSchema.getMaxLength() != null) {
+					sizeAnnotationBuilder.addMember("max", "$L", innerSchema.getMaxLength());
+				}
+				fieldBuilder.addAnnotation(sizeAnnotationBuilder.build());
+			}
+			return fieldBuilder.build();
+		} else if (equalsIgnoreCase(innerSchema.getFormat(), "date")) {
+			return FieldSpec.builder(ClassName.get("java.time", "LocalDate"), fieldName, Modifier.PRIVATE).build();
+		} else if (equalsIgnoreCase(innerSchema.getFormat(), "date-time")) {
+			return FieldSpec.builder(ClassName.get("java.time", "LocalDateTime"), fieldName, Modifier.PRIVATE).build();
+		}
+		throw new IllegalArgumentException(String.format("Error parsing string based property [%s]", fieldName));
 	}
 
 	private void parseDiscriminator(TypeSpec.Builder typeSpecBuilder, Discriminator discriminator, String targetPackage) {

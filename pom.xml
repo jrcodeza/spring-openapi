@@ -13,6 +13,7 @@
     <name>Spring Open API</name>
 
     <modules>
+        <module>annotations</module>
         <module>schema-generator</module>
         <module>schema-generator-plugin</module>
     </modules>
@@ -43,6 +44,11 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-context</artifactId>
+                <version>${spring-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
                 <version>${spring-core.version}</version>
             </dependency>
 

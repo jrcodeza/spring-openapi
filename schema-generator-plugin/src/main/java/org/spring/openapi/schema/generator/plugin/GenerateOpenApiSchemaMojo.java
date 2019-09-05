@@ -29,7 +29,7 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 	private String outputDirectory;
 
 	public void execute() {
-		OpenAPIGenerator openApiGenerator = new OpenAPIGenerator(asList(modelPackages), asList(controllerBasePackages));
+		OpenAPIGenerator openApiGenerator = new OpenAPIGenerator(asList(modelPackages), asList(controllerBasePackages), null);
 		OpenAPI openAPI = openApiGenerator.generate();
 
 		ObjectMapper objectMapper = new ObjectMapper();

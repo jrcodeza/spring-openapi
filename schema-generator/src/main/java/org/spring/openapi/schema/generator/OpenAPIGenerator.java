@@ -29,6 +29,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
 
 import static java.util.Arrays.asList;
@@ -45,12 +46,14 @@ public class OpenAPIGenerator {
 
     private final ComponentSchemaTransformer componentSchemaTransformer;
     private final OperationsTransformer operationsTransformer;
+    private final Info info;
 
-    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages) {
+    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
         this.componentSchemaTransformer = new ComponentSchemaTransformer();
         this.operationsTransformer = new OperationsTransformer();
+        this.info = info;
     }
 
     public OpenAPI generate() {
@@ -58,6 +61,7 @@ public class OpenAPIGenerator {
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
         openAPI.setPaths(createPathsWrapper());
+        openAPI.setInfo(info);
         logger.info("OpenAPI generation done!");
         return openAPI;
     }

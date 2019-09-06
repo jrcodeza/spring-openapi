@@ -52,7 +52,7 @@ public class OpenAPIGenerator {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
         this.componentSchemaTransformer = new ComponentSchemaTransformer();
-        this.operationsTransformer = new OperationsTransformer();
+        this.operationsTransformer = new OperationsTransformer(new GenerationContext(null, removeRegexFormatFromPackages(modelPackages)));
         this.info = info;
     }
 

@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ import org.spring.openapi.schema.generator.model.GenerationContext;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,6 +67,12 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 	private static final List<Class<?>> OPERATION_ANNOTATIONS = Arrays.asList(RequestMapping.class, PostMapping.class, GetMapping.class, PutMapping.class,
 			PatchMapping.class, DeleteMapping.class);
+
+	private final GenerationContext generationContext;
+
+	public OperationsTransformer(GenerationContext generationContext) {
+		this.generationContext = generationContext;
+	}
 
 	public Map<String, PathItem> transformOperations(List<Class<?>> restControllerClasses) {
 		final Map<String, PathItem> operationsMap = new HashMap<>();
@@ -177,14 +185,14 @@ public class OperationsTransformer extends OpenApiTransformer {
 		operation.setResponses(createApiResponses(method, getFirstFromArray(deleteMapping.produces())));
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(deleteMapping.value()), getFirstFromArray(deleteMapping.path()));
 
-		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setGet(operation));
+		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setDelete(operation));
 	}
 
 	private ApiResponses createApiResponses(Method method, String produces) {
 		Responses apiResponsesAnnotation = method.getAnnotation(Responses.class);
 
 		if (apiResponsesAnnotation == null) {
-			MediaType mediaType = createMediaType(method.getReturnType(), getGenericParams(method));
+			MediaType mediaType = createMediaType(method.getReturnType(), null, getGenericParams(method));
 
 			String responseStatusCode = resolveResponseStatus(method);
 			ApiResponse apiResponse = new ApiResponse();
@@ -354,7 +362,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			PathVariable pathVariableAnnotation = parameter.getAnnotation(PathVariable.class);
 			oasParameter.setName(resolveNameFromAnnotation(pathVariableAnnotation.name(), pathVariableAnnotation.value(), parameterName));
 			oasParameter.setIn("path");
-			oasParameter.setRequired(pathVariableAnnotation.required());
+			oasParameter.setRequired(true);
 		} else if (parameter.getAnnotation(RequestParam.class) != null && !parameter.getType().isAssignableFrom(MultipartFile.class)) {
 			RequestParam requestParamAnnotation = parameter.getAnnotation(RequestParam.class);
 			oasParameter.setName(resolveNameFromAnnotation(requestParamAnnotation.name(), requestParamAnnotation.value(), parameterName));
@@ -380,14 +388,16 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private RequestBody createRequestBody(Method method, String userDefinedContentType) {
-		Parameter requestBodyParameter = getRequestBody(method);
+		ParameterNamePair requestBodyParameter = getRequestBody(method);
 
 		if (requestBodyParameter == null) {
 			return null;
 		}
 
 		Content content = new Content();
-		content.addMediaType(resolveContentType(userDefinedContentType, requestBodyParameter), createMediaType(requestBodyParameter.getType()));
+		content.addMediaType(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()),
+				createMediaType(requestBodyParameter.getParameter().getType(), requestBodyParameter.getName())
+		);
 
 		RequestBody requestBody = new RequestBody();
 		requestBody.setRequired(true);
@@ -396,15 +406,29 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return requestBody;
 	}
 
-	private MediaType createMediaType(Class<?> requestBodyParameter, Class<?>... genericParams) {
+	private MediaType createMediaType(Class<?> requestBodyParameter, String parameterName, Class<?>... genericParams) {
 		Schema<?> rootMediaSchema = new Schema<>();
 		if (isFile(requestBodyParameter)) {
-			rootMediaSchema.setType("string");
-			rootMediaSchema.setFormat("binary");
-		} else if (requestBodyParameter.isAssignableFrom(List.class) && genericParams != null && genericParams.length > 0) {
+			Schema<?> fileSchema = new Schema<>();
+			fileSchema.setType("string");
+			fileSchema.setFormat("binary");
+
+			Map<String, Schema> properties = new HashMap<>();
+			properties.put(parameterName, fileSchema);
+
+			rootMediaSchema.setType("object");
+			rootMediaSchema.setProperties(properties);
+		} else if (requestBodyParameter.isAssignableFrom(List.class) && ArrayUtils.isNotEmpty(genericParams)) {
 			rootMediaSchema = parseArraySignature(genericParams[0], null, new Annotation[]{});
 		} else if (!StringUtils.equalsIgnoreCase(requestBodyParameter.getSimpleName(), "void")) {
-			rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + requestBodyParameter.getSimpleName());
+			if (isInPackagesToBeScanned(requestBodyParameter, generationContext)) {
+				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + requestBodyParameter.getSimpleName());
+			} else if (requestBodyParameter.isAssignableFrom(ResponseEntity.class) && ArrayUtils.isNotEmpty(genericParams)
+					&& !genericParams[0].isAssignableFrom(Void.class)) {
+				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + genericParams[0].getSimpleName());
+			} else {
+				return null;
+			}
 		} else {
 			return null;
 		}
@@ -444,18 +468,22 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return userDefinedContentType;
 	}
 
-	private Parameter getRequestBody(Method method) {
-		Parameter result = Stream.of(method.getParameters())
-				.filter(parameter -> parameter.getAnnotation(org.springframework.web.bind.annotation.RequestBody.class) != null)
-				.findFirst()
-				.orElse(null);
-		if (result == null) {
-			return Stream.of(method.getParameters())
-					.filter(parameter -> isFile(parameter.getType()))
-					.findFirst()
-					.orElse(null);
+	private ParameterNamePair getRequestBody(Method method) {
+		String[] parameterNames = parameterNameDiscoverer.getParameterNames(method);
+		Parameter[] parameters = method.getParameters();
+		for (int i = 0; i < parameters.length; i++) {
+			Parameter actualParameter = parameters[i];
+			if (actualParameter.getAnnotation(org.springframework.web.bind.annotation.RequestBody.class) != null) {
+				return new ParameterNamePair(parameterNames[i], actualParameter);
+			}
 		}
-		return result;
+		for (int i = 0; i < parameters.length; i++) {
+			Parameter actualParameter = parameters[i];
+			if (isFile(actualParameter.getType())) {
+				return new ParameterNamePair(parameterNames[i], actualParameter);
+			}
+		}
+		return null;
 	}
 
 	private boolean isFile(Class<?> parameter) {
@@ -499,5 +527,31 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 	public String getFirstFromArray(String[] strings) {
 		return strings == null || strings.length == 0 ? null : strings[0];
+	}
+
+	static class ParameterNamePair {
+		private String name;
+		private Parameter parameter;
+
+		public ParameterNamePair(String name, Parameter parameter) {
+			this.name = name;
+			this.parameter = parameter;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public Parameter getParameter() {
+			return parameter;
+		}
+
+		public void setParameter(Parameter parameter) {
+			this.parameter = parameter;
+		}
 	}
 }

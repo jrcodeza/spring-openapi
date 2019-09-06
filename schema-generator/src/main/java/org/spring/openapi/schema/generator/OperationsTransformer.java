@@ -9,15 +9,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 import static org.spring.openapi.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 
 public class OperationsTransformer extends OpenApiTransformer {
@@ -68,6 +70,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private static final List<Class<?>> OPERATION_ANNOTATIONS = Arrays.asList(RequestMapping.class, PostMapping.class, GetMapping.class, PutMapping.class,
 			PatchMapping.class, DeleteMapping.class);
 
+	private final Set<String> operationIds = new HashSet<>();
+
 	private final GenerationContext generationContext;
 
 	public OperationsTransformer(GenerationContext generationContext) {
@@ -75,6 +79,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	public Map<String, PathItem> transformOperations(List<Class<?>> restControllerClasses) {
+		operationIds.clear();
 		final Map<String, PathItem> operationsMap = new HashMap<>();
 
 		for (Class<?> clazz : restControllerClasses) {
@@ -108,7 +113,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (isHttpMethodWithRequestBody(requestMapping.method())) {
 			operation.setRequestBody(createRequestBody(method, getFirstFromArray(requestMapping.consumes())));
 		}
-		operation.setParameters(transformParameters(operation, method));
+		operation.setParameters(transformParameters(method));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(requestMapping.produces())));
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(requestMapping.value()), getFirstFromArray(requestMapping.path()));
@@ -122,7 +127,11 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (preparedUrl.charAt(preparedUrl.length() - 1) == '/') {
 			preparedUrl = preparedUrl.substring(0, preparedUrl.length() - 1);
 		}
-		return preparedUrl.replaceAll("//", "/");
+		preparedUrl = preparedUrl.replaceAll("//", "/");
+		if (!preparedUrl.startsWith("/")) {
+			preparedUrl = "/" + preparedUrl;
+		}
+		return preparedUrl.replaceAll("[^A-Za-z0-9/{}]", "");
 	}
 
 	private void setContentBasedOnHttpMethod(PathItem pathItem, RequestMethod[] method, Operation operation) {
@@ -181,7 +190,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		operation.setSummary(StringUtils.isBlank(deleteMapping.name()) ? deleteMapping.name() : method.getName());
 		operation.setTags(Collections.singletonList(classNameToTag(controllerClassName)));
 
-		operation.setParameters(transformParameters(operation, method));
+		operation.setParameters(transformParameters(method));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(deleteMapping.produces())));
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(deleteMapping.value()), getFirstFromArray(deleteMapping.path()));
 
@@ -196,7 +205,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 			String responseStatusCode = resolveResponseStatus(method);
 			ApiResponse apiResponse = new ApiResponse();
-			apiResponse.setDescription(HttpStatus.resolve(Integer.parseInt(responseStatusCode)).getReasonPhrase());
+			apiResponse.setDescription(HttpStatus.valueOf(Integer.parseInt(responseStatusCode)).getReasonPhrase());
 
 			if (mediaType != null) {
 				Content content = new Content();
@@ -273,7 +282,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		operation.setSummary(StringUtils.isBlank(getMapping.name()) ? getMapping.name() : method.getName());
 		operation.setTags(Collections.singletonList(classNameToTag(controllerClassName)));
 
-		operation.setParameters(transformParameters(operation, method));
+		operation.setParameters(transformParameters(method));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(getMapping.produces())));
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(getMapping.value()), getFirstFromArray(getMapping.path()));
@@ -289,7 +298,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setRequestBody(createRequestBody(method, getFirstFromArray(patchMapping.consumes())));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(patchMapping.produces())));
-		operation.setParameters(transformParameters(operation, method));
+		operation.setParameters(transformParameters(method));
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(patchMapping.value()), getFirstFromArray(patchMapping.path()));
 
@@ -304,7 +313,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setRequestBody(createRequestBody(method, getFirstFromArray(putMapping.consumes())));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(putMapping.produces())));
-		operation.setParameters(transformParameters(operation, method));
+		operation.setParameters(transformParameters(method));
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(putMapping.value()), getFirstFromArray(putMapping.path()));
 
@@ -319,7 +328,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setRequestBody(createRequestBody(method, getFirstFromArray(postMapping.consumes())));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(postMapping.produces())));
-		operation.setParameters(transformParameters(operation, method));
+		operation.setParameters(transformParameters(method));
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(postMapping.value()), getFirstFromArray(postMapping.path()));
 
@@ -336,7 +345,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		}
 	}
 
-	private List<io.swagger.v3.oas.models.parameters.Parameter> transformParameters(Operation operation, Method method) {
+	private List<io.swagger.v3.oas.models.parameters.Parameter> transformParameters(Method method) {
 		String[] parameterNames = parameterNameDiscoverer.getParameterNames(method);
 		Parameter[] parameters = method.getParameters();
 		List<io.swagger.v3.oas.models.parameters.Parameter> result = new ArrayList<>();
@@ -383,6 +392,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private String resolveNameFromAnnotation(String nameFromAnnotation, String valueFromAnnotation, String reflectionParameterName) {
 		return Stream.of(nameFromAnnotation, valueFromAnnotation, reflectionParameterName)
 				.filter(StringUtils::isNotBlank)
+				.map(s -> s.replaceAll("/[^A-Za-z0-9]/", ""))
 				.findFirst()
 				.orElse(null);
 	}
@@ -396,7 +406,11 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		Content content = new Content();
 		content.addMediaType(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()),
-				createMediaType(requestBodyParameter.getParameter().getType(), requestBodyParameter.getName())
+				createMediaType(
+						requestBodyParameter.getParameter().getType(),
+						requestBodyParameter.getName(),
+						getGenericParam(requestBodyParameter.getParameter())
+				)
 		);
 
 		RequestBody requestBody = new RequestBody();
@@ -404,6 +418,16 @@ public class OperationsTransformer extends OpenApiTransformer {
 		requestBody.setContent(content);
 		requestBody.setDescription("requestBody");
 		return requestBody;
+	}
+
+	private Class<?> getGenericParam(Parameter parameter) {
+		if (parameter.getParameterizedType() instanceof ParameterizedType) {
+			ParameterizedType parameterizedType = (ParameterizedType) parameter.getParameterizedType();
+			if (isNotEmpty(parameterizedType.getActualTypeArguments())) {
+				return (Class<?>) parameterizedType.getActualTypeArguments()[0];
+			}
+		}
+		return null;
 	}
 
 	private MediaType createMediaType(Class<?> requestBodyParameter, String parameterName, Class<?>... genericParams) {
@@ -418,12 +442,12 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 			rootMediaSchema.setType("object");
 			rootMediaSchema.setProperties(properties);
-		} else if (requestBodyParameter.isAssignableFrom(List.class) && ArrayUtils.isNotEmpty(genericParams)) {
+		} else if (requestBodyParameter.isAssignableFrom(List.class) && isNotEmpty(genericParams)) {
 			rootMediaSchema = parseArraySignature(genericParams[0], null, new Annotation[]{});
 		} else if (!StringUtils.equalsIgnoreCase(requestBodyParameter.getSimpleName(), "void")) {
 			if (isInPackagesToBeScanned(requestBodyParameter, generationContext)) {
 				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + requestBodyParameter.getSimpleName());
-			} else if (requestBodyParameter.isAssignableFrom(ResponseEntity.class) && ArrayUtils.isNotEmpty(genericParams)
+			} else if (requestBodyParameter.isAssignableFrom(ResponseEntity.class) && isNotEmpty(genericParams)
 					&& !genericParams[0].isAssignableFrom(Void.class)) {
 				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + genericParams[0].getSimpleName());
 			} else {
@@ -491,7 +515,12 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private String getOperationId(String nameFromAnnotation, Method method, HttpMethod httpMethod) {
-		return StringUtils.isBlank(nameFromAnnotation) ? method.getName() + "Using" + httpMethod.name() : nameFromAnnotation;
+		String operationId = StringUtils.isBlank(nameFromAnnotation) ? method.getName() + "Using" + httpMethod.name() : nameFromAnnotation;
+		if (operationIds.contains(operationId)) {
+			operationId = method.getDeclaringClass().getSimpleName() + operationId;
+		}
+		operationIds.add(operationId);
+		return operationId;
 	}
 
 	private <T extends Annotation> Optional<T> getAnnotation(Method method, Class<T> annotationClass) {

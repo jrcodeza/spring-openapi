@@ -1,6 +1,6 @@
 package org.spring.openapi.schema.generator.model;
 
-import org.spring.openapi.schema.generator.annotations.OpenApiIgnore;
+import org.spring.openapi.annotations.OpenApiIgnore;
 
 import java.util.Map;
 

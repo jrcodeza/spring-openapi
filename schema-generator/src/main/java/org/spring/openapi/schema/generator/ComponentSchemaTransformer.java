@@ -15,6 +15,7 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 
+import org.spring.openapi.schema.generator.interceptors.SchemaFieldInterceptor;
 import org.spring.openapi.schema.generator.model.GenerationContext;
 import org.spring.openapi.schema.generator.model.InheritanceInfo;
 import org.springframework.util.ReflectionUtils;
@@ -25,6 +26,12 @@ import io.swagger.v3.oas.models.media.Schema;
 import static org.spring.openapi.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 
 public class ComponentSchemaTransformer extends OpenApiTransformer {
+
+    private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
+
+    public ComponentSchemaTransformer(List<SchemaFieldInterceptor> schemaFieldInterceptors) {
+        this.schemaFieldInterceptors = schemaFieldInterceptors;
+    }
 
     public Schema transformSimpleSchema(Class<?> clazz, GenerationContext generationContext) {
         if (clazz.isEnum()) {
@@ -72,7 +79,10 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     private Map<String, Schema> getClassProperties(Class<?> clazz, GenerationContext generationContext, List<String> requiredFields) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
         ReflectionUtils.doWithLocalFields(clazz,
-                field -> getFieldSchema(field, generationContext, requiredFields).ifPresent(schema -> classPropertyMap.put(field.getName(), schema))
+                field -> getFieldSchema(field, generationContext, requiredFields).ifPresent(schema -> {
+                    schemaFieldInterceptors.forEach(modelClassFieldInterceptor -> modelClassFieldInterceptor.intercept(clazz, field, schema));
+                    classPropertyMap.put(field.getName(), schema);
+                })
         );
         return classPropertyMap;
     }

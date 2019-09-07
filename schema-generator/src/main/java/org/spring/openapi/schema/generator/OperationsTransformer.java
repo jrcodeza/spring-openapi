@@ -25,6 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spring.openapi.annotations.Response;
 import org.spring.openapi.annotations.Responses;
+import org.spring.openapi.schema.generator.interceptors.OperationParameterInterceptor;
+import org.spring.openapi.schema.generator.interceptors.OperationInterceptor;
+import org.spring.openapi.schema.generator.interceptors.RequestBodyInterceptor;
 import org.spring.openapi.schema.generator.model.GenerationContext;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.http.HttpMethod;
@@ -73,9 +76,18 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private final Set<String> operationIds = new HashSet<>();
 
 	private final GenerationContext generationContext;
+	private final List<OperationParameterInterceptor> operationParameterInterceptors;
+	private final List<OperationInterceptor> operationInterceptors;
+	private final List<RequestBodyInterceptor> requestBodyInterceptors;
 
-	public OperationsTransformer(GenerationContext generationContext) {
+	public OperationsTransformer(GenerationContext generationContext,
+								 List<OperationParameterInterceptor> operationParameterInterceptors,
+								 List<OperationInterceptor> operationInterceptors,
+								 List<RequestBodyInterceptor> requestBodyInterceptors) {
 		this.generationContext = generationContext;
+		this.operationParameterInterceptors = operationParameterInterceptors;
+		this.operationInterceptors = operationInterceptors;
+		this.requestBodyInterceptors = requestBodyInterceptors;
 	}
 
 	public Map<String, PathItem> transformOperations(List<Class<?>> restControllerClasses) {
@@ -117,6 +129,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 		}
 		operation.setParameters(transformParameters(method));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(requestMapping.produces())));
+
+		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(requestMapping.value()), getFirstFromArray(requestMapping.path()));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap,
@@ -352,9 +366,12 @@ public class OperationsTransformer extends OpenApiTransformer {
 		Parameter[] parameters = method.getParameters();
 		List<io.swagger.v3.oas.models.parameters.Parameter> result = new ArrayList<>();
 		for (int i = 0; i < parameters.length; i++) {
-			if (shuoldBeIncludedInDocumentation(parameters[i])) {
-				io.swagger.v3.oas.models.parameters.Parameter oasParameter = mapQueryParameter(parameters[i], parameterNames[i]);
+			Parameter actualParameter = parameters[i];
+			if (shouldBeIncludedInDocumentation(actualParameter)) {
+				String parameterName = parameterNames[i];
+				io.swagger.v3.oas.models.parameters.Parameter oasParameter = mapQueryParameter(actualParameter, parameterName);
 				if (oasParameter != null) {
+					operationParameterInterceptors.forEach(interceptor -> interceptor.intercept(method, actualParameter, parameterName, oasParameter));
 					result.add(oasParameter);
 				}
 			}
@@ -362,7 +379,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return result;
 	}
 
-	private boolean shuoldBeIncludedInDocumentation(Parameter parameter) {
+	private boolean shouldBeIncludedInDocumentation(Parameter parameter) {
 		return parameter.getAnnotation(PathVariable.class) != null || parameter.getAnnotation(RequestParam.class) != null
 				|| parameter.getAnnotation(RequestHeader.class) != null;
 	}
@@ -419,6 +436,11 @@ public class OperationsTransformer extends OpenApiTransformer {
 		requestBody.setRequired(true);
 		requestBody.setContent(content);
 		requestBody.setDescription("requestBody");
+
+		requestBodyInterceptors.forEach(interceptor ->
+				interceptor.intercept(method, requestBodyParameter.getParameter(), requestBodyParameter.getName(), requestBody)
+		);
+
 		return requestBody;
 	}
 

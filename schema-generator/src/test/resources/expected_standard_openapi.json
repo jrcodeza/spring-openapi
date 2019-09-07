@@ -17,6 +17,7 @@
           {
             "name": "carId",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -24,7 +25,7 @@
           }
         ],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -56,7 +57,7 @@
         "operationId": "requestBodyListUsingPOST",
         "parameters": [],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "application/json": {
               "schema": {
@@ -92,7 +93,7 @@
         "operationId": "createUsingPOST",
         "parameters": [],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "application/json": {
               "schema": {
@@ -127,6 +128,7 @@
           {
             "name": "carId",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -158,6 +160,7 @@
           {
             "name": "headerA",
             "in": "header",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -166,6 +169,7 @@
           {
             "name": "headerB",
             "in": "header",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -174,6 +178,7 @@
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -183,6 +188,7 @@
           {
             "name": "requestParamA",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -191,6 +197,7 @@
           {
             "name": "requestParamB",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -199,6 +206,7 @@
           {
             "name": "requestParamC",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": false,
             "schema": {
               "type": "string"
@@ -228,6 +236,7 @@
           {
             "name": "headerA",
             "in": "header",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -236,6 +245,7 @@
           {
             "name": "headerB",
             "in": "header",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -244,6 +254,7 @@
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -253,6 +264,7 @@
           {
             "name": "requestParamA",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -261,6 +273,7 @@
           {
             "name": "requestParamB",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -269,6 +282,7 @@
           {
             "name": "requestParamC",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": false,
             "schema": {
               "type": "string"
@@ -276,7 +290,7 @@
           }
         ],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "application/json": {
               "schema": {
@@ -311,6 +325,7 @@
           {
             "name": "requestParamA",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -319,6 +334,7 @@
           {
             "name": "requestParamB",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -327,6 +343,7 @@
           {
             "name": "requestParamC",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": false,
             "schema": {
               "type": "string"
@@ -358,6 +375,7 @@
           {
             "name": "validationDummies",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "array",
@@ -392,6 +410,7 @@
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -400,7 +419,7 @@
           }
         ],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "application/json": {
               "schema": {
@@ -452,6 +471,7 @@
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -476,12 +496,13 @@
         "tags": [
           "dummy-controller"
         ],
-        "summary": "",
+        "summary": "Interceptor summary",
         "operationId": "getOptionsUsingOPTIONS",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -506,12 +527,13 @@
         "tags": [
           "dummy-controller"
         ],
-        "summary": "",
+        "summary": "Interceptor summary",
         "operationId": "isPresentUsingHEAD",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -535,6 +557,7 @@
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -543,7 +566,7 @@
           }
         ],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "application/json": {
               "schema": {
@@ -578,6 +601,7 @@
           {
             "name": "model",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": false,
             "schema": {
               "type": "string"
@@ -586,6 +610,7 @@
           {
             "name": "torque",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": false,
             "schema": {
               "type": "integer",
@@ -619,6 +644,7 @@
           {
             "name": "source",
             "in": "header",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -626,7 +652,7 @@
           }
         ],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "application/json": {
               "schema": {
@@ -661,6 +687,7 @@
           {
             "name": "id",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -670,6 +697,7 @@
           {
             "name": "anotherId",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "integer",
@@ -696,12 +724,13 @@
         "tags": [
           "car-controller"
         ],
-        "summary": "",
+        "summary": "Interceptor summary",
         "operationId": "uploadCarDocumentsUsingPOST",
         "parameters": [
           {
             "name": "source",
             "in": "header",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -710,6 +739,7 @@
           {
             "name": "carId",
             "in": "path",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -718,6 +748,7 @@
           {
             "name": "type",
             "in": "query",
+            "description": ". Interceptor OperationParameter test",
             "required": true,
             "schema": {
               "type": "string"
@@ -725,7 +756,7 @@
           }
         ],
         "requestBody": {
-          "description": "requestBody",
+          "description": "requestBody. Test requestBody interceptor",
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -766,16 +797,20 @@
         "properties": {
           "dateTime": {
             "type": "string",
+            "description": ". Test schemaField interceptor",
             "format": "date-time"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           },
           "customer": {
+            "description": ". Test schemaField interceptor",
             "$ref": "#/components/schemas/Customer"
           },
           "products": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "discriminator": {
                 "propertyName": "type",
@@ -794,7 +829,8 @@
               ]
             }
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "Entity": {
         "required": [
@@ -803,11 +839,14 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "Laptop": {
+        "description": ". Test schema interceptors",
         "allOf": [
           {
             "$ref": "#/components/schemas/Product"
@@ -820,10 +859,12 @@
             "type": "object",
             "properties": {
               "hasWifi": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": ". Test schemaField interceptor"
               },
               "model": {
-                "type": "string"
+                "type": "string",
+                "description": ". Test schemaField interceptor"
               }
             }
           }
@@ -833,11 +874,14 @@
         "type": "object",
         "properties": {
           "options": {
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "Car": {
+        "description": ". Test schema interceptors",
         "allOf": [
           {
             "$ref": "#/components/schemas/Product"
@@ -847,6 +891,7 @@
             "properties": {
               "carType": {
                 "type": "string",
+                "description": ". Test schemaField interceptor",
                 "enum": [
                   "PERSONAL",
                   "TRUCK",
@@ -857,15 +902,18 @@
                 "maximum": 1000,
                 "minimum": 0,
                 "type": "integer",
+                "description": ". Test schemaField interceptor",
                 "format": "int32"
               },
               "model": {
                 "maxLength": 30,
                 "minLength": 2,
-                "type": "string"
+                "type": "string",
+                "description": ". Test schemaField interceptor"
               },
               "maxSpeed": {
                 "type": "integer",
+                "description": ". Test schemaField interceptor",
                 "format": "int32"
               }
             }
@@ -879,13 +927,15 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           },
           "vip": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": ". Test schemaField interceptor"
           },
           "topCustomerProduct": {
-            "description": "Testing description",
+            "description": "Testing description. Test schemaField interceptor",
             "deprecated": false,
             "discriminator": {
               "propertyName": "type",
@@ -903,10 +953,12 @@
               }
             ]
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "CarType": {
         "type": "string",
+        "description": ". Test schema interceptors",
         "enum": [
           "PERSONAL",
           "TRUCK",
@@ -921,43 +973,51 @@
         "properties": {
           "regex": {
             "pattern": "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           },
           "notNull": {
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           },
           "deprecated": {
             "type": "string",
-            "description": "",
+            "description": ". Test schemaField interceptor",
             "deprecated": true
           },
           "minMax": {
             "maximum": 7,
             "minimum": 3,
             "type": "integer",
+            "description": ". Test schemaField interceptor",
             "format": "int32"
           },
           "stringSizeOnlyMax": {
             "maxLength": 10,
             "minLength": 0,
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           },
           "decimalRange": {
             "maximum": 2.5,
             "minimum": 1.05,
             "type": "number",
+            "description": ". Test schemaField interceptor",
             "format": "double"
           },
           "stringSize": {
             "maxLength": 10,
             "minLength": 2,
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           },
           "javaDeprecated": {
             "type": "string",
+            "description": ". Test schemaField interceptor",
             "deprecated": true
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "Product": {
         "required": [
@@ -967,16 +1027,20 @@
         "properties": {
           "amount": {
             "type": "integer",
+            "description": ". Test schemaField interceptor",
             "format": "int32"
           },
           "price": {
             "type": "number",
+            "description": ". Test schemaField interceptor",
             "format": "double"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": ". Test schemaField interceptor"
           }
         },
+        "description": ". Test schema interceptors",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -990,12 +1054,14 @@
         "properties": {
           "cars": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "$ref": "#/components/schemas/Car"
             }
           },
           "enums": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "$ref": "#/components/schemas/CarType"
             }
@@ -1004,6 +1070,7 @@
             "maxItems": 6,
             "minItems": 2,
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "discriminator": {
                 "propertyName": "type",
@@ -1024,46 +1091,54 @@
           },
           "integers": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "type": "integer"
             }
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "CustomerInventory": {
         "type": "object",
         "properties": {
           "customers": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "$ref": "#/components/schemas/Customer"
             }
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       },
       "ArrayDummy": {
         "type": "object",
         "properties": {
           "primitiveIntegers": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "type": "integer"
             }
           },
           "cars": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "$ref": "#/components/schemas/Car"
             }
           },
           "integers": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "type": "integer"
             }
           },
           "products": {
             "type": "array",
+            "description": ". Test schemaField interceptor",
             "items": {
               "discriminator": {
                 "propertyName": "type",
@@ -1082,7 +1157,8 @@
               ]
             }
           }
-        }
+        },
+        "description": ". Test schema interceptors"
       }
     }
   }

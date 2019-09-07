@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spring.openapi.annotations.Response;
 import org.spring.openapi.annotations.Responses;
-import org.spring.openapi.schema.generator.interceptors.OperationParameterInterceptor;
 import org.spring.openapi.schema.generator.interceptors.OperationInterceptor;
+import org.spring.openapi.schema.generator.interceptors.OperationParameterInterceptor;
 import org.spring.openapi.schema.generator.interceptors.RequestBodyInterceptor;
 import org.spring.openapi.schema.generator.model.GenerationContext;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
@@ -60,6 +60,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 import static org.spring.openapi.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
+import static org.spring.openapi.schema.generator.util.GeneratorUtils.shouldBeIgnored;
 
 public class OperationsTransformer extends OpenApiTransformer {
 
@@ -95,6 +96,11 @@ public class OperationsTransformer extends OpenApiTransformer {
 		final Map<String, PathItem> operationsMap = new HashMap<>();
 
 		for (Class<?> clazz : restControllerClasses) {
+			if (shouldBeIgnored(clazz)) {
+				logger.info("Ignoring class {}", clazz.getName());
+				continue;
+			}
+
 			logger.info("Transforming {} controller class", clazz.getName());
 			String baseControllerPath = getBaseControllerPath(clazz);
 			ReflectionUtils.doWithMethods(clazz, method -> createOperation(method, baseControllerPath, operationsMap, clazz.getSimpleName()),
@@ -367,6 +373,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 		List<io.swagger.v3.oas.models.parameters.Parameter> result = new ArrayList<>();
 		for (int i = 0; i < parameters.length; i++) {
 			Parameter actualParameter = parameters[i];
+			if (shouldBeIgnored(actualParameter)) {
+				logger.info("Ignoring parameter {}", parameterNames[i]);
+				continue;
+			}
 			if (shouldBeIncludedInDocumentation(actualParameter)) {
 				String parameterName = parameterNames[i];
 				io.swagger.v3.oas.models.parameters.Parameter oasParameter = mapQueryParameter(actualParameter, parameterName);
@@ -420,6 +430,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 		ParameterNamePair requestBodyParameter = getRequestBody(method);
 
 		if (requestBodyParameter == null) {
+			return null;
+		}
+		if (shouldBeIgnored(requestBodyParameter.getParameter())) {
+			logger.info("Ignoring parameter {}", requestBodyParameter.getName());
 			return null;
 		}
 
@@ -552,6 +566,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private boolean isOperationMethod(Method method) {
+		if (shouldBeIgnored(method)) {
+			logger.info("Ignoring operation {}", method.getName());
+			return false;
+		}
 		return Stream.of(method.getAnnotations())
 				.anyMatch(annotation -> OPERATION_ANNOTATIONS.stream()
 						.anyMatch(operationAnnotation -> operationAnnotation.isAssignableFrom(annotation.getClass()))

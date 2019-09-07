@@ -3,6 +3,7 @@ package org.spring.openapi.schema.generator.plugin.controller;
 import java.util.List;
 
 import org.spring.openapi.annotations.Header;
+import org.spring.openapi.annotations.OpenApiIgnore;
 import org.spring.openapi.annotations.Response;
 import org.spring.openapi.annotations.Responses;
 import org.spring.openapi.schema.generator.plugin.model.OptionsClass;
@@ -109,7 +110,22 @@ public class DummyController {
 	}
 
 	@PostMapping(path = "/requestBodyList")
-	public ValidationDummy requestBodyList(@RequestBody List<ValidationDummy> validationDummies) {
+	public ValidationDummy requestBodyList(@RequestBody List<ValidationDummy> validationDummies,
+										   @RequestParam @OpenApiIgnore String toBeIgnored) {
+		return null;
+	}
+
+	@PostMapping(path = "/toBeIgnored")
+	@OpenApiIgnore
+	public ValidationDummy methodToBeIgnored(@RequestBody List<ValidationDummy> validationDummies) {
+		return null;
+	}
+
+	@PatchMapping(path = "/bodyToBeIgnored/{variable}")
+	@OpenApiIgnore
+	public ValidationDummy methodToBeIgnored(
+			@PathVariable String variable,
+			@RequestBody @OpenApiIgnore List<ValidationDummy> validationDummies) {
 		return null;
 	}
 }

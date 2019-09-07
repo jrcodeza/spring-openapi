@@ -1,5 +1,7 @@
 package org.spring.openapi.schema.generator.plugin.model;
 
+import org.spring.openapi.annotations.OpenApiIgnore;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class Customer extends Entity {
@@ -8,6 +10,9 @@ public class Customer extends Entity {
 
     @Schema(description = "Testing description")
     private Product topCustomerProduct;
+
+    @OpenApiIgnore
+    private String toBeIgnored;
 
     public boolean isVip() {
         return vip;
@@ -23,5 +28,13 @@ public class Customer extends Entity {
 
     public void setTopCustomerProduct(Product topCustomerProduct) {
         this.topCustomerProduct = topCustomerProduct;
+    }
+
+    public String getToBeIgnored() {
+        return toBeIgnored;
+    }
+
+    public void setToBeIgnored(String toBeIgnored) {
+        this.toBeIgnored = toBeIgnored;
     }
 }

@@ -18,7 +18,6 @@ public class GenerateOpenApiSchemaMojoTest extends AbstractMojoTestCase {
         File testPom = new File(getBasedir(), "src/test/resources/unit/generate-open-api-standard/pom.xml");
         GenerateOpenApiSchemaMojo mojo = (GenerateOpenApiSchemaMojo) lookupMojo("generateOpenApi", testPom);
         mojo.execute();
-
     }
 
 }

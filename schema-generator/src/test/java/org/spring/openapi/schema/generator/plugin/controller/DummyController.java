@@ -1,5 +1,7 @@
 package org.spring.openapi.schema.generator.plugin.controller;
 
+import java.util.List;
+
 import org.spring.openapi.annotations.Header;
 import org.spring.openapi.annotations.Response;
 import org.spring.openapi.annotations.Responses;
@@ -101,4 +103,13 @@ public class DummyController {
 		return null;
 	}
 
+	@GetMapping(path = "/requestParamList")
+	public ValidationDummy requestParamList(@RequestParam List<ValidationDummy> validationDummies) {
+		return null;
+	}
+
+	@PostMapping(path = "/requestBodyList")
+	public ValidationDummy requestBodyList(@RequestBody List<ValidationDummy> validationDummies) {
+		return null;
+	}
 }

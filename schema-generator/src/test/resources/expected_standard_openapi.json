@@ -47,6 +47,42 @@
         }
       }
     },
+    "/dummy/requestBodyList": {
+      "post": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "",
+        "operationId": "requestBodyListUsingPOST",
+        "parameters": [],
+        "requestBody": {
+          "description": "requestBody",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/dummy": {
       "post": {
         "tags": [
@@ -294,6 +330,40 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/requestParamList": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "",
+        "operationId": "requestParamListUsingGET",
+        "parameters": [
+          {
+            "name": "validationDummies",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
             }
           }
         ],

@@ -83,6 +83,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		final Map<String, PathItem> operationsMap = new HashMap<>();
 
 		for (Class<?> clazz : restControllerClasses) {
+			logger.info("Transforming {} controller class", clazz.getName());
 			String baseControllerPath = getBaseControllerPath(clazz);
 			ReflectionUtils.doWithMethods(clazz, method -> createOperation(method, baseControllerPath, operationsMap, clazz.getSimpleName()),
 					this::isOperationMethod);
@@ -92,6 +93,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private void createOperation(Method method, String baseControllerPath, Map<String, PathItem> operationsMap, String controllerClassName) {
+		logger.info("Transforming {} controller method", method.getName());
 		getAnnotation(method, PostMapping.class).ifPresent(postMapping -> mapPost(postMapping, method, operationsMap, controllerClassName, baseControllerPath));
 		getAnnotation(method, PutMapping.class).ifPresent(putMapping -> mapPut(putMapping, method, operationsMap, controllerClassName, baseControllerPath));
 		getAnnotation(method, PatchMapping.class).ifPresent(patchMapping -> mapPatch(patchMapping, method, operationsMap, controllerClassName,
@@ -241,7 +243,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private Class<?> getGenericParams(Method method) {
-		if (method.getGenericReturnType() != null && method.getGenericReturnType() instanceof ParameterizedType) {
+		if (method.getGenericReturnType() instanceof ParameterizedType) {
 			Type[] typeArguments = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments();
 			if (typeArguments != null && typeArguments.length > 0) {
 				return (Class<?>)typeArguments[0];

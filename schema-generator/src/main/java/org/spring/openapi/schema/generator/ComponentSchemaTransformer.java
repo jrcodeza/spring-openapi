@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Schema;
 
 import static org.spring.openapi.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
+import static org.spring.openapi.schema.generator.util.GeneratorUtils.shouldBeIgnored;
 
 public class ComponentSchemaTransformer extends OpenApiTransformer {
 
@@ -88,6 +89,10 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     }
 
     private Optional<Schema> getFieldSchema(Field field, GenerationContext generationContext, List<String> requiredFields) {
+        if (shouldBeIgnored(field)) {
+            return Optional.empty();
+        }
+
         Class<?> typeSignature = field.getType();
         Annotation[] annotations = field.getAnnotations();
         if (isRequired(annotations)) {

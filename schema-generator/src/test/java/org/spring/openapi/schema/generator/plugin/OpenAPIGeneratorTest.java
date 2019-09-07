@@ -15,6 +15,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.spring.openapi.schema.generator.OpenAPIGenerator;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 
 import static java.util.Collections.singletonList;
 
@@ -22,8 +23,17 @@ public class OpenAPIGeneratorTest {
 
     private static final OpenAPIGenerator openAPIGenerator = new OpenAPIGenerator(
             singletonList("org.spring.openapi.schema.generator.plugin.model.*"),
-            singletonList("org.spring.openapi.schema.generator.plugin.controller.*")
+            singletonList("org.spring.openapi.schema.generator.plugin.controller.*"),
+            createTestInfo()
     );
+
+    private static Info createTestInfo() {
+        Info info = new Info();
+        info.setTitle("Test API");
+        info.setDescription("Test description");
+        info.setVersion("1.0.0");
+        return info;
+    }
 
     @Test
     public void generateStandardScenario() {

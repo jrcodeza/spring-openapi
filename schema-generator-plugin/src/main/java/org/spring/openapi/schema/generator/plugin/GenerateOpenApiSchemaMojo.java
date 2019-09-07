@@ -13,11 +13,21 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.spring.openapi.schema.generator.OpenAPIGenerator;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 
 import static java.util.Arrays.asList;
 
 @Mojo(name = "generateOpenApi", defaultPhase = LifecyclePhase.INSTALL)
 public class GenerateOpenApiSchemaMojo extends AbstractMojo {
+
+	@Parameter
+	private String title;
+
+	@Parameter
+	private String description;
+
+	@Parameter
+	private String version;
 
 	@Parameter
 	private String[] modelPackages;
@@ -29,7 +39,7 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 	private String outputDirectory;
 
 	public void execute() {
-		OpenAPIGenerator openApiGenerator = new OpenAPIGenerator(asList(modelPackages), asList(controllerBasePackages));
+		OpenAPIGenerator openApiGenerator = new OpenAPIGenerator(asList(modelPackages), asList(controllerBasePackages), createInfoFromParameters());
 		OpenAPI openAPI = openApiGenerator.generate();
 
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -44,6 +54,14 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 		} catch (IOException e) {
 			getLog().error("Cannot serialize generated OpenAPI spec", e);
 		}
+	}
+
+	private Info createInfoFromParameters() {
+		Info info = new Info();
+		info.setTitle(title);
+		info.setDescription(description);
+		info.setVersion(version);
+		return info;
 	}
 
 }

@@ -1,6 +1,7 @@
 package org.spring.openapi.schema.generator;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -20,10 +21,15 @@ import org.spring.openapi.schema.generator.model.InheritanceInfo;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.RegexPatternTypeFilter;
+import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
 
 import static java.util.Arrays.asList;
@@ -38,20 +44,48 @@ public class OpenAPIGenerator {
     private List<String> modelPackages;
     private List<String> controllerBasePackages;
 
-    private ComponentSchemaTransformer componentSchemaTransformer;
+    private final ComponentSchemaTransformer componentSchemaTransformer;
+    private final OperationsTransformer operationsTransformer;
+    private final Info info;
 
-    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages) {
+    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
-        componentSchemaTransformer = new ComponentSchemaTransformer();
+        this.componentSchemaTransformer = new ComponentSchemaTransformer();
+        this.operationsTransformer = new OperationsTransformer(new GenerationContext(null, removeRegexFormatFromPackages(modelPackages)));
+        this.info = info;
     }
 
     public OpenAPI generate() {
         logger.info("Starting OpenAPI generation");
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
+        openAPI.setPaths(createPathsWrapper());
+        openAPI.setInfo(info);
         logger.info("OpenAPI generation done!");
         return openAPI;
+    }
+
+    private Paths createPathsWrapper() {
+        Paths pathsWrapper = new Paths();
+        pathsWrapper.putAll(createPathExtensions());
+        return pathsWrapper;
+    }
+
+    private Map<String, PathItem> createPathExtensions() {
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
+
+        List<Class<?>> controllerClasses = new ArrayList<>();
+        List<String> packagesWithoutRegex = removeRegexFormatFromPackages(controllerBasePackages);
+        for (String controllerPackage : packagesWithoutRegex) {
+            logger.info("Scanning controller package=[{}]", controllerPackage);
+            for (BeanDefinition beanDefinition : scanner.findCandidateComponents(controllerPackage)) {
+                logger.info("Scanning controller class=[{}]", beanDefinition.getBeanClassName());
+                controllerClasses.add(getClass(beanDefinition));
+            }
+        }
+        return operationsTransformer.transformOperations(controllerClasses);
     }
 
     private Components createComponentsWrapper() {
@@ -67,18 +101,18 @@ public class OpenAPIGenerator {
 
         List<String> packagesWithoutRegex = removeRegexFormatFromPackages(modelPackages);
         for (String modelPackage : packagesWithoutRegex) {
-            logger.info("Scanning package=[{}]", modelPackage);
+            logger.info("Scanning model package=[{}]", modelPackage);
             Map<String, InheritanceInfo> inheritanceMap = new HashMap<>();
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {
-                logger.info("Scanning class=[{}]", beanDefinition.getBeanClassName());
+                logger.info("Scanning model class=[{}]", beanDefinition.getBeanClassName());
                 // populating inheritance info
                 Class<?> clazz = getClass(beanDefinition);
                 if (inheritanceMap.containsKey(clazz.getName()) || AnnotationUtils.getAnnotation(clazz, OpenApiIgnore.class) != null) {
                     continue;
                 }
-                getInheritanceInfo(clazz).ifPresent(info -> {
+                getInheritanceInfo(clazz).ifPresent(inheritanceInfo -> {
                     logger.info("Adding entry [{}] to inheritance map", clazz.getName());
-                    inheritanceMap.put(clazz.getName(), info);
+                    inheritanceMap.put(clazz.getName(), inheritanceInfo);
                 });
             }
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {

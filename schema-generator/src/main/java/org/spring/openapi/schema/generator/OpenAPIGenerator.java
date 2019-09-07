@@ -110,9 +110,9 @@ public class OpenAPIGenerator {
                 if (inheritanceMap.containsKey(clazz.getName()) || AnnotationUtils.getAnnotation(clazz, OpenApiIgnore.class) != null) {
                     continue;
                 }
-                getInheritanceInfo(clazz).ifPresent(info -> {
+                getInheritanceInfo(clazz).ifPresent(inheritanceInfo -> {
                     logger.info("Adding entry [{}] to inheritance map", clazz.getName());
-                    inheritanceMap.put(clazz.getName(), info);
+                    inheritanceMap.put(clazz.getName(), inheritanceInfo);
                 });
             }
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {

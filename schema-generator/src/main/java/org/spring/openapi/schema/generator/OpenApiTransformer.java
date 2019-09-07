@@ -43,6 +43,7 @@ public abstract class OpenApiTransformer {
 	protected abstract ComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext);
 	protected abstract Schema createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations);
 
+	@SuppressWarnings("squid:S1192") // better in-place defined for better readability
 	protected Schema parseBaseTypeSignature(Class<?> type, Annotation[] annotations) {
 		if (byte.class.equals(type) || short.class.equals(type) || int.class.equals(type)) {
 			return createNumberSchema("integer", "int32", annotations);
@@ -57,10 +58,11 @@ public abstract class OpenApiTransformer {
 		} else if (boolean.class.equals(type)) {
 			return createBooleanSchema();
 		}
-		logger.info(format("Ignoring unsupported type=[%s]", type.getSimpleName()));
+		logger.info("Ignoring unsupported type=[{}]", type.getSimpleName());
 		return null;
 	}
 
+	@SuppressWarnings("squid:S3776") // no other solution
 	protected Schema parseClassRefTypeSignature(Class<?> typeClass, Annotation[] annotations, GenerationContext generationContext) {
 		if (typeClass.isEnum()) {
 			return createEnumSchema(typeClass.getEnumConstants());
@@ -149,12 +151,14 @@ public abstract class OpenApiTransformer {
 				.collect(Collectors.toList());
 	}
 
+	@SuppressWarnings("squid:S1192") // better in-place defined for better readability
 	protected Schema createBooleanSchema() {
 		Schema<?> schema = new Schema<>();
 		schema.setType("boolean");
 		return schema;
 	}
 
+	@SuppressWarnings("squid:S1192") // better in-place defined for better readability
 	protected Schema createStringSchema(String format, Annotation[] annotations) {
 		Schema<?> schema = new Schema<>();
 		schema.setType("string");

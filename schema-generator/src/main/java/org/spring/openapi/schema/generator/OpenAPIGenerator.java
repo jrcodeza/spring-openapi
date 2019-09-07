@@ -15,7 +15,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spring.openapi.schema.generator.annotations.OpenApiIgnore;
+import org.spring.openapi.annotations.OpenApiIgnore;
+import org.spring.openapi.schema.generator.interceptors.OperationInterceptor;
+import org.spring.openapi.schema.generator.interceptors.OperationParameterInterceptor;
+import org.spring.openapi.schema.generator.interceptors.RequestBodyInterceptor;
+import org.spring.openapi.schema.generator.interceptors.SchemaFieldInterceptor;
+import org.spring.openapi.schema.generator.interceptors.SchemaInterceptor;
 import org.spring.openapi.schema.generator.model.GenerationContext;
 import org.spring.openapi.schema.generator.model.InheritanceInfo;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -48,12 +53,37 @@ public class OpenAPIGenerator {
     private final OperationsTransformer operationsTransformer;
     private final Info info;
 
+    private final List<SchemaInterceptor> schemaInterceptors;
+    private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
+    private final List<OperationParameterInterceptor> operationParameterInterceptors;
+    private final List<OperationInterceptor> operationInterceptors;
+    private final List<RequestBodyInterceptor> requestBodyInterceptors;
+
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
+        this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    }
+
+    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info,
+                            List<SchemaInterceptor> schemaInterceptors,
+                            List<SchemaFieldInterceptor> schemaFieldInterceptors,
+                            List<OperationParameterInterceptor> operationParameterInterceptors,
+                            List<OperationInterceptor> operationInterceptors,
+                            List<RequestBodyInterceptor> requestBodyInterceptors) {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
-        this.componentSchemaTransformer = new ComponentSchemaTransformer();
-        this.operationsTransformer = new OperationsTransformer(new GenerationContext(null, removeRegexFormatFromPackages(modelPackages)));
+        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors);
+
+        GenerationContext operationsGenerationContext = new GenerationContext(null, removeRegexFormatFromPackages(modelPackages));
+        this.operationsTransformer = new OperationsTransformer(
+                operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors
+        );
+
         this.info = info;
+        this.schemaInterceptors = schemaInterceptors;
+        this.schemaFieldInterceptors = schemaFieldInterceptors;
+        this.operationParameterInterceptors = operationParameterInterceptors;
+        this.operationInterceptors = operationInterceptors;
+        this.requestBodyInterceptors = requestBodyInterceptors;
     }
 
     public OpenAPI generate() {
@@ -64,6 +94,26 @@ public class OpenAPIGenerator {
         openAPI.setInfo(info);
         logger.info("OpenAPI generation done!");
         return openAPI;
+    }
+
+    public void addSchemaInterceptor(SchemaInterceptor schemaInterceptor) {
+        this.schemaInterceptors.add(schemaInterceptor);
+    }
+
+    public void addSchemaFieldInterceptor(SchemaFieldInterceptor schemaFieldInterceptor) {
+        this.schemaFieldInterceptors.add(schemaFieldInterceptor);
+    }
+
+    public void addOperationParameterInterceptor(OperationParameterInterceptor operationParameterInterceptor) {
+        this.operationParameterInterceptors.add(operationParameterInterceptor);
+    }
+
+    public void addOperationInterceptor(OperationInterceptor operationInterceptor) {
+        this.operationInterceptors.add(operationInterceptor);
+    }
+
+    public void addRequestBodyInterceptor(RequestBodyInterceptor requestBodyInterceptor) {
+        this.requestBodyInterceptors.add(requestBodyInterceptor);
     }
 
     private Paths createPathsWrapper() {
@@ -121,7 +171,9 @@ public class OpenAPIGenerator {
                     continue;
                 }
                 GenerationContext generationContext = new GenerationContext(inheritanceMap, packagesWithoutRegex);
-                schemaMap.put(clazz.getSimpleName(), componentSchemaTransformer.transformSimpleSchema(clazz, generationContext));
+                Schema<?> transformedComponentSchema = componentSchemaTransformer.transformSimpleSchema(clazz, generationContext);
+                schemaInterceptors.forEach(schemaInterceptor -> schemaInterceptor.intercept(clazz, transformedComponentSchema));
+                schemaMap.put(clazz.getSimpleName(), transformedComponentSchema);
             }
 
         }

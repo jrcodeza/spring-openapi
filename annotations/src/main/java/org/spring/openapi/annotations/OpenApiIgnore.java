@@ -1,4 +1,4 @@
-package org.spring.openapi.schema.generator.annotations;
+package org.spring.openapi.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

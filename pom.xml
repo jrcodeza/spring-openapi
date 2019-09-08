@@ -4,7 +4,7 @@
 
     <groupId>org.spring.openapi</groupId>
     <artifactId>spring-openapi</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -159,7 +159,7 @@
         <connection>scm:git:git://github.com/jremenec/spring-openapi</connection>
         <developerConnection>scm:git:git@github.com:jremenec/spring-openapi.git</developerConnection>
         <url>https://github.com/jremenec/spring-openapi</url>
-        <tag>spring-opneapi-1.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>

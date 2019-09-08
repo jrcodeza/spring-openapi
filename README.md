@@ -124,3 +124,10 @@ You can see that title, description and version are the OpenAPI info parameters.
 Then you have to define also modelPackages and controllerPackages. Additionally
 you should define also outputDirectory, in our case target/openapi will be the target folder
 where the swagger.json will be saved.
+
+## Contributions
+Pull requests are welcome. If you would like to collaborate more feel free to contact
+me on remenec.jakub@gmail.com .
+
+## License
+License for this tool is GNU GPL V3.

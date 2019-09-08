@@ -9,6 +9,26 @@
     <packaging>pom</packaging>
 
     <name>Spring Open API</name>
+    <description>OpenAPI 3 generator library to generate OpenAPI 3 json spec from Java + Spring annotated classes.</description>
+    <url>https://github.com/jremenec/spring-openapi</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.en.html</url>
+            <distribution>repo</distribution>
+            <comments>GNU General Public License v3.0</comments>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>jremenec</id>
+            <name>Jakub Remenec</name>
+            <email>remenec.jakub@gmail.com</email>
+            <url>https://github.com/jremenec</url>
+        </developer>
+    </developers>
 
     <modules>
         <module>annotations</module>

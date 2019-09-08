@@ -21,17 +21,17 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.spring.openapi</groupId>
+				<groupId>com.github.jrcodeza</groupId>
 				<artifactId>spring-openapi-schema-generator-plugin</artifactId>
 				<configuration>
 					<title>Test title</title>
 					<description>Test description</description>
 					<version>1.0.0-TEST</version>
 					<modelPackages>
-						<modelPackage>org.spring.openapi.schema.generator.test.model.*</modelPackage>
+						<modelPackage>com.github.jrcodeza.schema.generator.plugin.model.*</modelPackage>
 					</modelPackages>
 					<controllerBasePackages>
-						<controllerBasePackage>org.spring.openapi.schema.generator.test.controller.*</controllerBasePackage>
+						<controllerBasePackage>com.github.jrcodeza.schema.generator.plugin.controller.*</controllerBasePackage>
 					</controllerBasePackages>
 					<outputDirectory>target/openapi</outputDirectory>
 				</configuration>

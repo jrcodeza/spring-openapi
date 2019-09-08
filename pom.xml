@@ -179,7 +179,7 @@
         <connection>scm:git:git://github.com/jremenec/spring-openapi</connection>
         <developerConnection>scm:git:git@github.com:jremenec/spring-openapi.git</developerConnection>
         <url>https://github.com/jremenec/spring-openapi</url>
-        <tag>HEAD</tag>
+        <tag>spring-openapi-1.0.0</tag>
     </scm>
 
     <distributionManagement>

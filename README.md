@@ -21,7 +21,7 @@ not able to generate client with full OpenAPI 3 discriminator features
 1. Include dependency
 ```java
 <dependency>
-    <groupId>org.spring.openapi</groupId>
+    <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-schema-generator</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -58,7 +58,7 @@ openAPIGenerator.addSchemaInterceptor(schemaInterceptor);
 
 You can define your own interceptor as follows:
 ```java
-package org.spring.openapi.schema.generator.plugin.interceptors;
+package com.github.jrcodeza.schema.generator.plugin.interceptors;
 
 import java.lang.reflect.Method;
 
@@ -101,7 +101,7 @@ Maven plugin wraps before mentioned functionality into maven plugin.
 <build>
 		<plugins>
 			<plugin>
-				<groupId>org.spring.openapi</groupId>
+				<groupId>com.github.jrcodeza</groupId>
 				<artifactId>spring-openapi-schema-generator-plugin</artifactId>
 				<configuration>
 					<title>Test title</title>

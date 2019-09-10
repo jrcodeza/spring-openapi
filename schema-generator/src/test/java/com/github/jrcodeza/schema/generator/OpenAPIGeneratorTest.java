@@ -44,6 +44,7 @@ public class OpenAPIGeneratorTest {
         openAPIGenerator.addRequestBodyInterceptor(requestBodyInterceptor);
         openAPIGenerator.addSchemaFieldInterceptor(schemaFieldInterceptor);
         openAPIGenerator.addSchemaInterceptor(schemaInterceptor);
+        openAPIGenerator.addGlobalHeader("Test-Global-Header", "Some desc", false);
 
         OpenAPI openAPI = openAPIGenerator.generate();
 

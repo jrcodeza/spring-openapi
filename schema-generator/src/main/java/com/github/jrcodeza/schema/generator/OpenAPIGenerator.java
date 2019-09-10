@@ -19,13 +19,13 @@ import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaInterceptor;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
+import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.RegexPatternTypeFilter;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,6 +59,8 @@ public class OpenAPIGenerator {
     private final List<OperationInterceptor> operationInterceptors;
     private final List<RequestBodyInterceptor> requestBodyInterceptors;
 
+    private final List<Header> globalHeaders;
+
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
         this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
@@ -72,10 +74,11 @@ public class OpenAPIGenerator {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
         this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors);
+        this.globalHeaders = new ArrayList<>();
 
         GenerationContext operationsGenerationContext = new GenerationContext(null, removeRegexFormatFromPackages(modelPackages));
         this.operationsTransformer = new OperationsTransformer(
-                operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors
+                operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders
         );
 
         this.info = info;
@@ -116,6 +119,10 @@ public class OpenAPIGenerator {
         this.requestBodyInterceptors.add(requestBodyInterceptor);
     }
 
+    public void addGlobalHeader(String name, String description, boolean required) {
+        globalHeaders.add(new Header(name, description, required));
+    }
+
     private Paths createPathsWrapper() {
         Paths pathsWrapper = new Paths();
         pathsWrapper.putAll(createPathExtensions());
@@ -129,9 +136,9 @@ public class OpenAPIGenerator {
         List<Class<?>> controllerClasses = new ArrayList<>();
         List<String> packagesWithoutRegex = removeRegexFormatFromPackages(controllerBasePackages);
         for (String controllerPackage : packagesWithoutRegex) {
-            logger.info("Scanning controller package=[{}]", controllerPackage);
+            logger.debug("Scanning controller package=[{}]", controllerPackage);
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(controllerPackage)) {
-                logger.info("Scanning controller class=[{}]", beanDefinition.getBeanClassName());
+                logger.debug("Scanning controller class=[{}]", beanDefinition.getBeanClassName());
                 controllerClasses.add(getClass(beanDefinition));
             }
         }
@@ -151,23 +158,23 @@ public class OpenAPIGenerator {
 
         List<String> packagesWithoutRegex = removeRegexFormatFromPackages(modelPackages);
         for (String modelPackage : packagesWithoutRegex) {
-            logger.info("Scanning model package=[{}]", modelPackage);
+            logger.debug("Scanning model package=[{}]", modelPackage);
             Map<String, InheritanceInfo> inheritanceMap = new HashMap<>();
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {
-                logger.info("Scanning model class=[{}]", beanDefinition.getBeanClassName());
+                logger.debug("Scanning model class=[{}]", beanDefinition.getBeanClassName());
                 // populating inheritance info
                 Class<?> clazz = getClass(beanDefinition);
-                if (inheritanceMap.containsKey(clazz.getName()) || AnnotationUtils.getAnnotation(clazz, OpenApiIgnore.class) != null) {
+                if (inheritanceMap.containsKey(clazz.getName()) || clazz.getAnnotation(OpenApiIgnore.class) != null) {
                     continue;
                 }
                 getInheritanceInfo(clazz).ifPresent(inheritanceInfo -> {
-                    logger.info("Adding entry [{}] to inheritance map", clazz.getName());
+                    logger.debug("Adding entry [{}] to inheritance map", clazz.getName());
                     inheritanceMap.put(clazz.getName(), inheritanceInfo);
                 });
             }
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {
                 Class<?> clazz = getClass(beanDefinition);
-                if (schemaMap.containsKey(clazz.getSimpleName()) || AnnotationUtils.getAnnotation(clazz, OpenApiIgnore.class) != null) {
+                if (schemaMap.containsKey(clazz.getSimpleName()) || clazz.getAnnotation(OpenApiIgnore.class) != null) {
                     continue;
                 }
                 GenerationContext generationContext = new GenerationContext(inheritanceMap, packagesWithoutRegex);
@@ -189,7 +196,7 @@ public class OpenAPIGenerator {
     }
 
     private Optional<InheritanceInfo> getInheritanceInfo(Class<?> clazz) {
-        if (AnnotationUtils.getAnnotation(clazz, JsonSubTypes.class) != null) {
+        if (clazz.getAnnotation(JsonSubTypes.class) != null) {
             List<Annotation> annotations = unmodifiableList(asList(clazz.getAnnotations()));
             JsonTypeInfo jsonTypeInfo = annotations.stream()
                     .filter(annotation -> annotation instanceof JsonTypeInfo)

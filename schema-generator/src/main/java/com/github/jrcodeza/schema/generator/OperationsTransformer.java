@@ -81,15 +81,18 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private final List<OperationParameterInterceptor> operationParameterInterceptors;
 	private final List<OperationInterceptor> operationInterceptors;
 	private final List<RequestBodyInterceptor> requestBodyInterceptors;
+	private final List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders;
 
 	public OperationsTransformer(GenerationContext generationContext,
 								 List<OperationParameterInterceptor> operationParameterInterceptors,
 								 List<OperationInterceptor> operationInterceptors,
-								 List<RequestBodyInterceptor> requestBodyInterceptors) {
+								 List<RequestBodyInterceptor> requestBodyInterceptors,
+								 List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders) {
 		this.generationContext = generationContext;
 		this.operationParameterInterceptors = operationParameterInterceptors;
 		this.operationInterceptors = operationInterceptors;
 		this.requestBodyInterceptors = requestBodyInterceptors;
+		this.globalHeaders = globalHeaders;
 	}
 
 	public Map<String, PathItem> transformOperations(List<Class<?>> restControllerClasses) {
@@ -102,7 +105,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 				continue;
 			}
 
-			logger.info("Transforming {} controller class", clazz.getName());
+			logger.debug("Transforming {} controller class", clazz.getName());
 			String baseControllerPath = getBaseControllerPath(clazz);
 			ReflectionUtils.doWithMethods(clazz, method -> createOperation(method, baseControllerPath, operationsMap, clazz.getSimpleName()),
 					this::isOperationMethod);
@@ -112,7 +115,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private void createOperation(Method method, String baseControllerPath, Map<String, PathItem> operationsMap, String controllerClassName) {
-		logger.info("Transforming {} controller method", method.getName());
+		logger.debug("Transforming {} controller method", method.getName());
 		getAnnotation(method, PostMapping.class).ifPresent(postMapping -> mapPost(postMapping, method, operationsMap, controllerClassName, baseControllerPath));
 		getAnnotation(method, PutMapping.class).ifPresent(putMapping -> mapPut(putMapping, method, operationsMap, controllerClassName, baseControllerPath));
 		getAnnotation(method, PatchMapping.class).ifPresent(patchMapping -> mapPatch(patchMapping, method, operationsMap, controllerClassName,
@@ -217,6 +220,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		operation.setResponses(createApiResponses(method, getFirstFromArray(deleteMapping.produces())));
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(deleteMapping.value()), getFirstFromArray(deleteMapping.path()));
 
+		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setDelete(operation));
 	}
 
@@ -310,6 +314,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(getMapping.value()), getFirstFromArray(getMapping.path()));
 
+		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setGet(operation));
 	}
 
@@ -325,6 +330,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(patchMapping.value()), getFirstFromArray(patchMapping.path()));
 
+		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPatch(operation));
 	}
 
@@ -340,6 +346,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(putMapping.value()), getFirstFromArray(putMapping.path()));
 
+		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPut(operation));
 	}
 
@@ -355,6 +362,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(postMapping.value()), getFirstFromArray(postMapping.path()));
 
+		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPost(operation));
 	}
 
@@ -372,6 +380,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		String[] parameterNames = parameterNameDiscoverer.getParameterNames(method);
 		Parameter[] parameters = method.getParameters();
 		List<io.swagger.v3.oas.models.parameters.Parameter> result = new ArrayList<>();
+		addGlobalHeaders(result);
 		for (int i = 0; i < parameters.length; i++) {
 			Parameter actualParameter = parameters[i];
 			if (shouldBeIgnored(actualParameter)) {
@@ -388,6 +397,29 @@ public class OperationsTransformer extends OpenApiTransformer {
 			}
 		}
 		return result;
+	}
+
+	private void addGlobalHeaders(List<io.swagger.v3.oas.models.parameters.Parameter> result) {
+		if (!globalHeaders.isEmpty()) {
+			List<io.swagger.v3.oas.models.parameters.Parameter> globalOasHeaders = globalHeaders.stream()
+					.map(this::createOasHeader)
+					.collect(Collectors.toList());
+			result.addAll(globalOasHeaders);
+		}
+	}
+
+	private io.swagger.v3.oas.models.parameters.Parameter createOasHeader(com.github.jrcodeza.schema.generator.model.Header header) {
+		Schema<?> schema = new Schema<>();
+		schema.setType("string");
+
+		io.swagger.v3.oas.models.parameters.Parameter parameter = new io.swagger.v3.oas.models.parameters.Parameter();
+		parameter.setIn("header");
+		parameter.setName(header.getName());
+		parameter.setDescription(header.getDescription());
+		parameter.setRequired(header.isRequired());
+
+		parameter.setSchema(schema);
+		return parameter;
 	}
 
 	private boolean shouldBeIncludedInDocumentation(Parameter parameter) {

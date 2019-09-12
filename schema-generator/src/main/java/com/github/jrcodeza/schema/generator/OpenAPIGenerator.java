@@ -157,9 +157,9 @@ public class OpenAPIGenerator {
         modelPackages.forEach(modelPackage -> scanner.addIncludeFilter(new RegexPatternTypeFilter(Pattern.compile(modelPackage))));
 
         List<String> packagesWithoutRegex = removeRegexFormatFromPackages(modelPackages);
+        Map<String, InheritanceInfo> inheritanceMap = new HashMap<>();
         for (String modelPackage : packagesWithoutRegex) {
             logger.debug("Scanning model package=[{}]", modelPackage);
-            Map<String, InheritanceInfo> inheritanceMap = new HashMap<>();
             for (BeanDefinition beanDefinition : scanner.findCandidateComponents(modelPackage)) {
                 logger.debug("Scanning model class=[{}]", beanDefinition.getBeanClassName());
                 // populating inheritance info

@@ -7,17 +7,18 @@ import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
-import org.junit.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
-
+import com.github.jrcodeza.schema.generator.config.builder.OpenApiGeneratorConfigBuilder;
 import com.github.jrcodeza.schema.generator.interceptors.TestOperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.TestOperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.TestRequestBodyInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.TestSchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.TestSchemaInterceptor;
+import com.github.jrcodeza.schema.generator.interceptors.examples.OpenApiExampleResolver;
+
+import org.apache.commons.io.IOUtils;
+import org.json.JSONException;
+import org.junit.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -34,6 +35,37 @@ public class OpenAPIGeneratorTest {
 
     @Test
     public void generateStandardScenario() {
+        OpenAPI openAPI = createTestGenerator().generate();
+        assertOpenApiResult(openAPI, "expected_standard_openapi.json");
+    }
+
+    @Test
+    public void generateExampleScenario() {
+        OpenAPI openAPI = createTestGenerator().generate(
+                OpenApiGeneratorConfigBuilder.defaultConfig()
+                        .withGenerateExamples(true)
+                        .withOpenApiExampleResolver(createExampleResolver())
+                        .build()
+        );
+        assertOpenApiResult(openAPI, "expected_example_openapi.json");
+    }
+
+    private void assertOpenApiResult(OpenAPI openAPI, String pathToExpectedFile) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            String generated = objectMapper.writeValueAsString(openAPI);
+            JSONAssert.assertEquals(getResourceFileAsString(pathToExpectedFile), generated, false);
+        } catch (JsonProcessingException | JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private OpenApiExampleResolver createExampleResolver() {
+        return exampleKey -> "TestExampleResolvedWithKey=" + exampleKey;
+    }
+
+    private OpenAPIGenerator createTestGenerator() {
         OpenAPIGenerator openAPIGenerator = new OpenAPIGenerator(
                 singletonList("com.github.jrcodeza.schema.generator.model.*"),
                 singletonList("com.github.jrcodeza.schema.generator.controller.*"),
@@ -45,17 +77,7 @@ public class OpenAPIGeneratorTest {
         openAPIGenerator.addSchemaFieldInterceptor(schemaFieldInterceptor);
         openAPIGenerator.addSchemaInterceptor(schemaInterceptor);
         openAPIGenerator.addGlobalHeader("Test-Global-Header", "Some desc", false);
-
-        OpenAPI openAPI = openAPIGenerator.generate();
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        try {
-            String generated = objectMapper.writeValueAsString(openAPI);
-            JSONAssert.assertEquals(getResourceFileAsString(), generated, false);
-        } catch (JsonProcessingException | JSONException e) {
-            e.printStackTrace();
-        }
+        return openAPIGenerator;
     }
 
     private Info createTestInfo() {
@@ -66,9 +88,9 @@ public class OpenAPIGeneratorTest {
         return info;
     }
 
-    private String getResourceFileAsString() {
+    private String getResourceFileAsString(String pathToExpectedFile) {
         ClassLoader classLoader = getClass().getClassLoader();
-        try (InputStream inputStream = classLoader.getResourceAsStream("expected_standard_openapi.json")) {
+        try (InputStream inputStream = classLoader.getResourceAsStream(pathToExpectedFile)) {
             return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();

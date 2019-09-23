@@ -4,6 +4,13 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
 
+import com.github.jrcodeza.OpenApiExample;
+import com.github.jrcodeza.OpenApiExamples;
+
+@OpenApiExamples(value = {
+        @OpenApiExample(name = "CarExampleName_1", value = "carExampleValue_1"),
+        @OpenApiExample(name = "CarExampleName_2", value = "carExampleValue_2")
+})
 public class Car extends Product {
 
     @Min(0)
@@ -13,6 +20,7 @@ public class Car extends Product {
     private Integer maxSpeed;
 
     @Size(min = 2, max = 30)
+    @OpenApiExample(value = "field example")
     private String model;
 
     private CarType carType;

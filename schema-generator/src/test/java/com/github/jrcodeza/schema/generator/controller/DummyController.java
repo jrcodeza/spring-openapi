@@ -3,11 +3,14 @@ package com.github.jrcodeza.schema.generator.controller;
 import java.util.List;
 
 import com.github.jrcodeza.Header;
+import com.github.jrcodeza.OpenApiExample;
+import com.github.jrcodeza.OpenApiExamples;
 import com.github.jrcodeza.OpenApiIgnore;
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
 import com.github.jrcodeza.schema.generator.model.OptionsClass;
 import com.github.jrcodeza.schema.generator.model.dummy.ValidationDummy;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -41,7 +44,7 @@ public class DummyController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public ValidationDummy create(@RequestBody @Validated ValidationDummy validationDummy) {
+	public ValidationDummy create(@RequestBody @Validated @OpenApiExample("{\"bodyExample\":\"value\"}") ValidationDummy validationDummy) {
 		return null;
 	}
 
@@ -70,7 +73,8 @@ public class DummyController {
 			@RequestHeader String headerA,
 			@RequestHeader("headerB") String headerB,
 			@PathVariable Integer id,
-			@RequestParam("requestParamA") String requestParamA,
+			@RequestParam("requestParamA") @OpenApiExample(name = "customValidationDummy", description = "CustomDescription", key = "CUSTOM_EXAMPLE_KEY_1")
+					String requestParamA,
 			@RequestParam String requestParamB,
 			@RequestParam(name = "requestParamC", required = false) String requestParamC
 	) {
@@ -80,7 +84,11 @@ public class DummyController {
 	@GetMapping("/onlyRequestParams")
 	public ValidationDummy onlyRequestParams(
 			@RequestParam("requestParamA") String requestParamA,
-			@RequestParam String requestParamB,
+			@RequestParam @OpenApiExamples(value = {
+					@OpenApiExample(name = "example_1", description = "example_1_description", value = "moreExamples_1"),
+					@OpenApiExample(name = "example_2", description = "example_2_description", value = "moreExamples_2")
+			})
+					String requestParamB,
 			@RequestParam(name = "requestParamC", required = false) String requestParamC
 	) {
 		return null;

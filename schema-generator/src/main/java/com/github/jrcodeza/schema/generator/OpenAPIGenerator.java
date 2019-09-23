@@ -13,11 +13,14 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.jrcodeza.OpenApiIgnore;
+import com.github.jrcodeza.schema.generator.config.OpenApiGeneratorConfig;
+import com.github.jrcodeza.schema.generator.config.builder.OpenApiGeneratorConfigBuilder;
 import com.github.jrcodeza.schema.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaInterceptor;
+import com.github.jrcodeza.schema.generator.interceptors.examples.OperationParameterExampleInterceptor;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
@@ -90,13 +93,29 @@ public class OpenAPIGenerator {
     }
 
     public OpenAPI generate() {
+        return generate(OpenApiGeneratorConfigBuilder.defaultConfig().build());
+    }
+
+    public OpenAPI generate(OpenApiGeneratorConfig openApiGeneratorConfig) {
         logger.info("Starting OpenAPI generation");
+        initializeExampleInterceptor(openApiGeneratorConfig);
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
         openAPI.setPaths(createPathsWrapper());
         openAPI.setInfo(info);
         logger.info("OpenAPI generation done!");
         return openAPI;
+    }
+
+    private void initializeExampleInterceptor(OpenApiGeneratorConfig openApiGeneratorConfig) {
+        if (openApiGeneratorConfig.isGenerateExamples()) {
+            OperationParameterExampleInterceptor operationParameterExampleInterceptor =
+                    new OperationParameterExampleInterceptor(openApiGeneratorConfig.getOpenApiExampleResolver());
+            requestBodyInterceptors.add(operationParameterExampleInterceptor);
+            schemaFieldInterceptors.add(operationParameterExampleInterceptor);
+            operationParameterInterceptors.add(operationParameterExampleInterceptor);
+            schemaInterceptors.add(operationParameterExampleInterceptor);
+        }
     }
 
     public void addSchemaInterceptor(SchemaInterceptor schemaInterceptor) {

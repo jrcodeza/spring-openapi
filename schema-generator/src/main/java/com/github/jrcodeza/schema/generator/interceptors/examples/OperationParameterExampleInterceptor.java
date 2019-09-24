@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 
 import com.github.jrcodeza.OpenApiExample;
 import com.github.jrcodeza.OpenApiExamples;
-import com.github.jrcodeza.schema.generator.OpenApiTransformer;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;

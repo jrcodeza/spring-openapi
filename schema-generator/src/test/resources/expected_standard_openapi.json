@@ -57,95 +57,6 @@
         }
       }
     },
-    "/dummy/requestBodyList": {
-      "post": {
-        "tags": [
-          "dummy-controller"
-        ],
-        "summary": "Interceptor summary",
-        "operationId": "requestBodyListUsingPOST",
-        "parameters": [
-          {
-            "name": "Test-Global-Header",
-            "in": "header",
-            "description": "Some desc",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "requestBody. Test requestBody interceptor",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ValidationDummy"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationDummy"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/dummy": {
-      "post": {
-        "tags": [
-          "dummy-controller"
-        ],
-        "summary": "Interceptor summary",
-        "operationId": "createUsingPOST",
-        "parameters": [
-          {
-            "name": "Test-Global-Header",
-            "in": "header",
-            "description": "Some desc",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "requestBody. Test requestBody interceptor",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ValidationDummy"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationDummy"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/cars/{carId}": {
       "get": {
         "tags": [
@@ -418,6 +329,308 @@
         "responses": {
           "200": {
             "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cars": {
+      "get": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarsUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "torque",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Car"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "createCarUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Car"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Car"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/fileWithoutResponseAnnotation": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getFileWithoutResponseAnnotationUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cars/{carId}/documents": {
+      "post": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "uploadCarDocumentsUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "carId",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentFile": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Car"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/requestBodyList": {
+      "post": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "requestBodyListUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy": {
+      "post": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "createUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
@@ -709,13 +922,13 @@
         }
       }
     },
-    "/cars": {
+    "/dummy/fileWithResponseAnnotation": {
       "get": {
         "tags": [
-          "car-controller"
+          "dummy-controller"
         ],
         "summary": "Interceptor summary",
-        "operationId": "getCarsUsingGET",
+        "operationId": "getFileWithResponseAnnotationUsingGET",
         "parameters": [
           {
             "name": "Test-Global-Header",
@@ -725,87 +938,16 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "model",
-            "in": "query",
-            "description": ". Interceptor OperationParameter test",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "torque",
-            "in": "query",
-            "description": ". Interceptor OperationParameter test",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
-              "application/json": {
+              "application/pdf": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Car"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "car-controller"
-        ],
-        "summary": "Interceptor summary",
-        "operationId": "createCarUsingPOST",
-        "parameters": [
-          {
-            "name": "Test-Global-Header",
-            "in": "header",
-            "description": "Some desc",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "source",
-            "in": "header",
-            "description": ". Interceptor OperationParameter test",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "requestBody. Test requestBody interceptor",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Car"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Car"
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -858,82 +1000,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationDummy"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/cars/{carId}/documents": {
-      "post": {
-        "tags": [
-          "car-controller"
-        ],
-        "summary": "Interceptor summary",
-        "operationId": "uploadCarDocumentsUsingPOST",
-        "parameters": [
-          {
-            "name": "Test-Global-Header",
-            "in": "header",
-            "description": "Some desc",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "source",
-            "in": "header",
-            "description": ". Interceptor OperationParameter test",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "carId",
-            "in": "path",
-            "description": ". Interceptor OperationParameter test",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "type",
-            "in": "query",
-            "description": ". Interceptor OperationParameter test",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "requestBody. Test requestBody interceptor",
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "documentFile": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Car"
                 }
               }
             }

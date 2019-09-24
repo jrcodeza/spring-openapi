@@ -27,6 +27,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @RestController
 @RequestMapping("/dummy")
@@ -134,6 +137,17 @@ public class DummyController {
 	public ValidationDummy methodToBeIgnored(
 			@PathVariable String variable,
 			@RequestBody @OpenApiIgnore List<ValidationDummy> validationDummies) {
+		return null;
+	}
+
+	@GetMapping(path = "/fileWithoutResponseAnnotation")
+	public MultipartFile getFileWithoutResponseAnnotation() {
+		return null;
+	}
+
+	@GetMapping(path = "/fileWithResponseAnnotation", produces = "application/pdf")
+	@Response(responseCode = 200, description = "desc", responseBody = MultipartFile.class)
+	public MultipartFile getFileWithResponseAnnotation() {
 		return null;
 	}
 }

@@ -69,6 +69,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private static Logger logger = LoggerFactory.getLogger(OperationsTransformer.class);
 
 	private static final String DEFAULT_CONTENT_TYPE = "application/json";
+	private static final String DEFAULT_FILE_RETURN_CONTENT_TYPE = "application/octet-stream";
 	private static final String MULTIPART_FORM_DATA_CONTENT_TYPE = "multipart/form-data";
 	private static final LocalVariableTableParameterNameDiscoverer parameterNameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
 
@@ -228,7 +229,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 		Responses apiResponsesAnnotation = method.getAnnotation(Responses.class);
 
 		if (apiResponsesAnnotation == null) {
-			MediaType mediaType = createMediaType(method.getReturnType(), null, getGenericParams(method));
+			Class<?> methodReturnType = method.getReturnType();
+			MediaType mediaType = createMediaType(methodReturnType, null, getGenericParams(method));
 
 			String responseStatusCode = resolveResponseStatus(method);
 			ApiResponse apiResponse = new ApiResponse();
@@ -236,7 +238,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 			if (mediaType != null) {
 				Content content = new Content();
-				content.addMediaType(StringUtils.isBlank(produces) ? DEFAULT_CONTENT_TYPE : produces, mediaType);
+				content.addMediaType(StringUtils.isBlank(produces) ? resolveDefaultContentType(methodReturnType) : produces, mediaType);
 				apiResponse.setContent(content);
 			}
 
@@ -253,18 +255,35 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 			if (!StringUtils.containsIgnoreCase(responseAnnotation.responseBody().getSimpleName(), "void")) {
 				Schema<?> schema = new Schema<>();
-				schema.set$ref(COMPONENT_REF_PREFIX + responseAnnotation.responseBody().getSimpleName());
+
+				if (isFileResponse(responseAnnotation.responseBody())) {
+					schema.setType("string");
+					schema.setFormat("binary");
+				} else {
+					schema.set$ref(COMPONENT_REF_PREFIX + responseAnnotation.responseBody().getSimpleName());
+				}
 
 				MediaType mediaType = new MediaType();
 				mediaType.setSchema(schema);
 
 				Content content = new Content();
-				content.addMediaType(StringUtils.isBlank(produces) ? DEFAULT_CONTENT_TYPE : produces, mediaType);
+				content.addMediaType(StringUtils.isBlank(produces) ? resolveDefaultContentType(responseAnnotation.responseBody()) : produces, mediaType);
 				apiResponse.setContent(content);
 			}
 			apiResponses.put(String.valueOf(responseAnnotation.responseCode()), apiResponse);
 		}
 		return apiResponses;
+	}
+
+	private String resolveDefaultContentType(Class<?> responseBody) {
+		if (isFileResponse(responseBody)) {
+			return DEFAULT_FILE_RETURN_CONTENT_TYPE;
+		}
+		return DEFAULT_CONTENT_TYPE;
+	}
+
+	private boolean isFileResponse(Class<?> responseBodyClass) {
+		return responseBodyClass.isAssignableFrom(MultipartFile.class);
 	}
 
 	private Class<?> getGenericParams(Method method) {
@@ -508,11 +527,14 @@ public class OperationsTransformer extends OpenApiTransformer {
 			fileSchema.setType("string");
 			fileSchema.setFormat("binary");
 
-			Map<String, Schema> properties = new HashMap<>();
-			properties.put(parameterName, fileSchema);
-
-			rootMediaSchema.setType("object");
-			rootMediaSchema.setProperties(properties);
+			if (parameterName == null) {
+				rootMediaSchema = fileSchema;
+			} else {
+				Map<String, Schema> properties = new HashMap<>();
+				properties.put(parameterName, fileSchema);
+				rootMediaSchema.setType("object");
+				rootMediaSchema.setProperties(properties);
+			}
 		} else if (requestBodyParameter.isAssignableFrom(List.class) && isNotEmpty(genericParams)) {
 			rootMediaSchema = parseArraySignature(genericParams[0], null, new Annotation[]{});
 		} else if (!StringUtils.equalsIgnoreCase(requestBodyParameter.getSimpleName(), "void")) {

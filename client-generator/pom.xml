@@ -4,9 +4,9 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>org.spring.openapi</groupId>
+		<groupId>com.github.jrcodeza</groupId>
 		<artifactId>spring-openapi</artifactId>
-		<version>3.0.0-SNAPSHOT</version>
+		<version>1.0.3-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>spring-openapi-client-generator</artifactId>
@@ -24,6 +24,11 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
 		</dependency>
 
 		<dependency>

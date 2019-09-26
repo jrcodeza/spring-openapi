@@ -64,9 +64,6 @@ public abstract class OpenApiTransformer {
 
 	@SuppressWarnings("squid:S3776") // no other solution
 	protected Schema parseClassRefTypeSignature(Class<?> typeClass, Annotation[] annotations, GenerationContext generationContext) {
-		if (typeClass.isEnum()) {
-			return createEnumSchema(typeClass.getEnumConstants());
-		}
 		if (Byte.class.equals(typeClass) || Short.class.equals(typeClass) || Integer.class.equals(typeClass)) {
 			return createNumberSchema("integer", "int32", annotations);
 		} else if (Long.class.equals(typeClass) || BigInteger.class.equals(typeClass)) {

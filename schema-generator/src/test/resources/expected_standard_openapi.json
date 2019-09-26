@@ -1332,13 +1332,8 @@
             "type": "object",
             "properties": {
               "carType": {
-                "type": "string",
                 "description": ". Test schemaField interceptor",
-                "enum": [
-                  "PERSONAL",
-                  "TRUCK",
-                  "VAN"
-                ]
+                "$ref": "#/components/schemas/CarType"
               },
               "torque": {
                 "maximum": 1000,

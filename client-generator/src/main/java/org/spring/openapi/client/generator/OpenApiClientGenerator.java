@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -47,21 +48,21 @@ public class OpenApiClientGenerator {
 
 	private Map<String, Schema> allComponents;
 
-	public void generateClient(String targetPackage, File openApiJson) {
+	public void generateClient(String targetPackage, String openApiSchemaPath, String outputPath) {
 		try {
-			OpenAPI openAPI = IntegrationObjectMapperFactory.createJson().readValue(openApiJson, OpenAPI.class);
+			OpenAPI openAPI = IntegrationObjectMapperFactory.createJson().readValue(new File(openApiSchemaPath), OpenAPI.class);
 			allComponents = openAPI.getComponents().getSchemas();
-			allComponents.entrySet().forEach(schemaEntry -> processSchemaEntry(targetPackage, schemaEntry));
+			allComponents.entrySet().forEach(schemaEntry -> processSchemaEntry(targetPackage, schemaEntry, outputPath));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void processSchemaEntry(String targetPackage, Map.Entry<String, Schema> schemaEntry) {
+	private void processSchemaEntry(String targetPackage, Map.Entry<String, Schema> schemaEntry, String outputPath) {
 		Schema schema = schemaEntry.getValue();
 		if (schema.getEnum() != null) {
 			TypeSpec.Builder typeSpecBuilder = createEnumClass(schemaEntry.getKey(), schema);
-			buildTypeSpec(targetPackage, typeSpecBuilder);
+			buildTypeSpec(targetPackage, typeSpecBuilder, outputPath);
 			return;
 		}
 		TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(schemaEntry.getKey()).addModifiers(Modifier.PUBLIC);
@@ -81,16 +82,16 @@ public class OpenApiClientGenerator {
 			parseProperties(typeSpecBuilder, schema.getProperties(), targetPackage, schema.getRequired());
 		}
 
-		buildTypeSpec(targetPackage, typeSpecBuilder);
+		buildTypeSpec(targetPackage, typeSpecBuilder, outputPath);
 	}
 
-	private void buildTypeSpec(String targetPackage, TypeSpec.Builder typeSpecBuilder) {
+	private void buildTypeSpec(String targetPackage, TypeSpec.Builder typeSpecBuilder, String outputPath) {
 		try {
 			JavaFile.builder(targetPackage, typeSpecBuilder.build())
 					.build()
-					.writeTo(Paths.get("C:\\Users\\jremenec.DAVINCI\\Projects\\spring-openapi\\client-generator\\target\\openapi"));
+					.writeTo(new File(outputPath));
 		} catch (IOException e) {
-			e.printStackTrace();
+			e.printStackTrace(); // TODO
 		}
 	}
 
@@ -160,7 +161,7 @@ public class OpenApiClientGenerator {
 										   TypeSpec.Builder typeSpecBuilder) {
 		if (innerSchema.getEnum() != null) {
 			typeSpecBuilder.addType(createEnumClass(StringUtils.capitalize(fieldName), innerSchema).build());
-			return createSimpleFieldSpec(targetPackage, StringUtils.capitalize(fieldName), fieldName, typeSpecBuilder);
+			return createSimpleFieldSpec(null, StringUtils.capitalize(fieldName), fieldName, typeSpecBuilder);
 		}
 		if (equalsIgnoreCase(innerSchema.getType(), "string")) {
 			return getStringBasedSchemaField(fieldName, innerSchema, typeSpecBuilder);
@@ -260,7 +261,7 @@ public class OpenApiClientGenerator {
 	}
 
 	private FieldSpec.Builder createSimpleFieldSpec(String packageName, String className, String fieldName, TypeSpec.Builder typeSpecBuilder) {
-		ClassName simpleFieldClassName = ClassName.get(packageName, className);
+		ClassName simpleFieldClassName = packageName == null ? ClassName.bestGuess(className) : ClassName.get(packageName, className);
 		if (typeSpecBuilder != null) {
 			enrichWithGetSet(typeSpecBuilder, simpleFieldClassName, fieldName);
 		}
@@ -332,8 +333,8 @@ public class OpenApiClientGenerator {
 	private void parseDiscriminator(TypeSpec.Builder typeSpecBuilder, Discriminator discriminator, String targetPackage) {
 		if (discriminator.getPropertyName() != null) {
 			AnnotationSpec jsonTypeInfoAnnotation = AnnotationSpec.builder(JsonTypeInfo.class)
-					.addMember("use", "$L", JsonTypeInfo.Id.NAME)
-					.addMember("include", "$L", JsonTypeInfo.As.PROPERTY)
+					.addMember("use", "JsonTypeInfo.Id.NAME")
+					.addMember("include", "JsonTypeInfo.As.PROPERTY")
 					.addMember("property", "$S", discriminator.getPropertyName())
 					.build();
 			typeSpecBuilder.addAnnotation(jsonTypeInfoAnnotation);
@@ -348,11 +349,25 @@ public class OpenApiClientGenerator {
 					.collect(Collectors.toList());
 
 			AnnotationSpec jsonSubTypesAnnotation = AnnotationSpec.builder(JsonSubTypes.class)
-					.addMember("value", "$L", annotationSpecs)
+					.addMember("value", wrapAnnotationsIntoArray(annotationSpecs))
 					.build();
 
 			typeSpecBuilder.addAnnotation(jsonSubTypesAnnotation);
 		}
+	}
+
+	private CodeBlock wrapAnnotationsIntoArray(List<AnnotationSpec> annotationSpecs) {
+		CodeBlock.Builder codeBuilder  = CodeBlock.builder();
+		boolean arrayStart = true;
+		codeBuilder.add("{");
+		for (AnnotationSpec annotationSpec : annotationSpecs) {
+			if (!arrayStart)
+				codeBuilder.add(", ");
+			arrayStart = false;
+			codeBuilder.add("$L", annotationSpec);
+		}
+		codeBuilder.add("}");
+		return codeBuilder.build();
 	}
 
 	private String getNameFromRef(String ref) {

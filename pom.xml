@@ -33,6 +33,7 @@
     <modules>
         <module>annotations</module>
         <module>schema-generator</module>
+        <module>client-generator-plugin</module>
         <module>client-generator</module>
         <module>schema-generator-plugin</module>
     </modules>

@@ -2,10 +2,8 @@ package org.spring.openapi.client.generator;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Modifier;
@@ -22,7 +20,6 @@ import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
@@ -40,19 +37,32 @@ import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.JAVA_LANG_PKG;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.JAVA_TIME_PKG;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.buildTypeSpec;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.determineParentClassNameUsingDiscriminator;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.determineParentClassNameUsingOneOf;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.getNameFromRef;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.getNumberGenericClassName;
+import static org.spring.openapi.client.generator.ClientGeneratorUtils.getStringGenericClassName;
 
 public class OpenApiClientGenerator {
-
-	private static final String JAVA_LANG_PKG = "java.lang";
-	private static final String JAVA_TIME_PKG = "java.time";
 
 	private Map<String, Schema> allComponents;
 
 	public void generateClient(String targetPackage, String openApiSchemaPath, String outputPath) {
+		generateClient(targetPackage, openApiSchemaPath, outputPath, true);
+	}
+
+	public void generateClient(String targetPackage, String openApiSchemaPath, String outputPath, boolean generateResourceInterface) {
 		try {
 			OpenAPI openAPI = IntegrationObjectMapperFactory.createJson().readValue(new File(openApiSchemaPath), OpenAPI.class);
 			allComponents = openAPI.getComponents().getSchemas();
 			allComponents.entrySet().forEach(schemaEntry -> processSchemaEntry(targetPackage, schemaEntry, outputPath));
+
+			if (generateResourceInterface) {
+				new ResourceInterfaceGenerator(allComponents).generateResourceInterface(openAPI.getPaths(), targetPackage, outputPath);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -85,16 +95,6 @@ public class OpenApiClientGenerator {
 		buildTypeSpec(targetPackage, typeSpecBuilder, outputPath);
 	}
 
-	private void buildTypeSpec(String targetPackage, TypeSpec.Builder typeSpecBuilder, String outputPath) {
-		try {
-			JavaFile.builder(targetPackage, typeSpecBuilder.build())
-					.build()
-					.writeTo(new File(outputPath));
-		} catch (IOException e) {
-			e.printStackTrace(); // TODO
-		}
-	}
-
 	private void parseProperties(TypeSpec.Builder typeSpecBuilder, Map<String, Schema> properties, String targetPackage, List<String> requiredFields) {
 		for (Map.Entry<String, Schema> propertyEntry :  properties.entrySet()) {
 			// type or ref or oneOf + (discriminator)
@@ -106,10 +106,10 @@ public class OpenApiClientGenerator {
 				// simple no inheritance
 				fieldSpecBuilder = createSimpleFieldSpec(targetPackage, getNameFromRef(innerSchema.get$ref()), propertyEntry.getKey(), typeSpecBuilder);
 			} else if (innerSchema instanceof ComposedSchema && CollectionUtils.isNotEmpty(((ComposedSchema) innerSchema).getAllOf())) {
-				fieldSpecBuilder = createSimpleFieldSpec(targetPackage, determineParentClassNameUsingOneOf(innerSchema, propertyEntry.getKey()), propertyEntry.getKey(), typeSpecBuilder);
+				fieldSpecBuilder = createSimpleFieldSpec(targetPackage, determineParentClassNameUsingOneOf(innerSchema, propertyEntry.getKey(), allComponents), propertyEntry.getKey(), typeSpecBuilder);
 			} else if (innerSchema.getDiscriminator() != null) {
 				// complicated inheritance - identify target class
-				fieldSpecBuilder = createSimpleFieldSpec(targetPackage, determineParentClassNameUsingDiscriminator(innerSchema, propertyEntry.getKey()), propertyEntry.getKey(), typeSpecBuilder);
+				fieldSpecBuilder = createSimpleFieldSpec(targetPackage, determineParentClassNameUsingDiscriminator(innerSchema, propertyEntry.getKey(), allComponents), propertyEntry.getKey(), typeSpecBuilder);
 			} else {
 				throw new IllegalArgumentException("Incorrect schema. One of [type, $ref, discriminator+oneOf] has to be defined in property schema");
 			}
@@ -120,41 +120,6 @@ public class OpenApiClientGenerator {
 				typeSpecBuilder.addField(fieldSpecBuilder.build());
 			}
 		}
-	}
-
-	private String determineParentClassNameUsingOneOf(Schema innerSchema, String fieldName) {
-		if (!(innerSchema instanceof ComposedSchema)) {
-			throw new IllegalArgumentException("To determine class name using allOf schema has to be Composed");
-		}
-		List<Schema> allOf = ((ComposedSchema) innerSchema).getAllOf();
-		String refToOneOf = allOf.get(0).get$ref();
-		if (refToOneOf == null) {
-			throw new IllegalArgumentException("OneOf entry needs to have defined $ref. Field: " + fieldName);
-		}
-		return determineParentClassName(getNameFromRef(refToOneOf), allComponents);
-	}
-
-	private String determineParentClassNameUsingDiscriminator(Schema innerSchema, String fieldName) {
-		Set<Map.Entry<String,String>> discriminatorEntries = innerSchema.getDiscriminator().getMapping().entrySet();
-		if (CollectionUtils.isEmpty(discriminatorEntries)) {
-			throw new IllegalArgumentException("Discriminator needs to have at least one value defined. Field: " + fieldName);
-		}
-		return determineParentClassName(discriminatorEntries.iterator().next().getValue(), allComponents);
-	}
-
-	private String determineParentClassName(String childClassToFind, Map<String, Schema> allComponents) {
-		Schema childClass = allComponents.get(childClassToFind);
-		if (childClass instanceof ComposedSchema) {
-			ComposedSchema childClassComposed = (ComposedSchema) childClass;
-			if (CollectionUtils.isNotEmpty(childClassComposed.getAllOf())) {
-				String parentClassRef = childClassComposed.getAllOf().get(0).get$ref();
-				if (parentClassRef == null) {
-					throw new IllegalArgumentException("Unsupported inheritance model. AllOf $ref for parent class has to be defined");
-				}
-				return getNameFromRef(parentClassRef);
-			}
-		}
-		throw new IllegalArgumentException("Unsupported inheritance model for " + (childClass == null ? "null" : childClass.getName()));
 	}
 
 	private FieldSpec.Builder parseTypeBasedSchema(String fieldName, Schema innerSchema, String targetPackage,
@@ -191,36 +156,11 @@ public class OpenApiClientGenerator {
 		} else if (arrayItemsSchema.get$ref() != null) {
 			return ClassName.get(targetPackage, getNameFromRef(arrayItemsSchema.get$ref()));
 		} else if (arrayItemsSchema instanceof ComposedSchema && CollectionUtils.isNotEmpty(((ComposedSchema) arrayItemsSchema).getAllOf())) {
-			return ClassName.get(targetPackage, determineParentClassNameUsingOneOf(arrayItemsSchema, "innerArray"));
+			return ClassName.get(targetPackage, determineParentClassNameUsingOneOf(arrayItemsSchema, "innerArray", allComponents));
 		} else if (arrayItemsSchema.getDiscriminator() != null) {
-			return ClassName.get(targetPackage, determineParentClassNameUsingDiscriminator(arrayItemsSchema, "innerArray"));
+			return ClassName.get(targetPackage, determineParentClassNameUsingDiscriminator(arrayItemsSchema, "innerArray", allComponents));
 		}
 		return ClassName.get(JAVA_LANG_PKG, "Object");
-	}
-
-	private ClassName getStringGenericClassName(Schema<?> genericSchema) {
-		if (genericSchema.getFormat() == null) {
-			return ClassName.get(JAVA_LANG_PKG, "String");
-		} else if (equalsIgnoreCase(genericSchema.getFormat(), "date")) {
-			return ClassName.get(JAVA_TIME_PKG, "LocalDate");
-		} else if (equalsIgnoreCase(genericSchema.getFormat(), "date-time")) {
-			return ClassName.get(JAVA_TIME_PKG, "LocalDateTime");
-		}
-		throw new IllegalArgumentException("Error parsing string based property");
-	}
-
-	private ClassName getNumberGenericClassName(Schema<?> genericSchema) {
-		if (genericSchema.getFormat() == null || StringUtils.equalsIgnoreCase(genericSchema.getFormat(), "int32")) {
-			return ClassName.get(JAVA_LANG_PKG, "Integer");
-		} else if (StringUtils.equalsIgnoreCase(genericSchema.getFormat(), "int64")) {
-			return ClassName.get(JAVA_LANG_PKG, "Long");
-		} else if (StringUtils.equalsIgnoreCase(genericSchema.getFormat(), "float")) {
-			return ClassName.get(JAVA_LANG_PKG, "Float");
-		} else if (StringUtils.equalsIgnoreCase(genericSchema.getFormat(), "double")) {
-			return ClassName.get(JAVA_LANG_PKG, "Double");
-		} else {
-			return ClassName.get(JAVA_LANG_PKG, "Integer");
-		}
 	}
 
 	private TypeSpec.Builder createEnumClass(String name, Schema schema) {
@@ -368,10 +308,6 @@ public class OpenApiClientGenerator {
 		}
 		codeBuilder.add("}");
 		return codeBuilder.build();
-	}
-
-	private String getNameFromRef(String ref) {
-		return ref.replace("#/components/schemas/", "");
 	}
 
 }

@@ -9,7 +9,8 @@ public class OpenApiClientGeneratorTest {
 		new OpenApiClientGenerator().generateClient(
 				"test.openapi",
 				"src/test/resources/input_openapi.json",
-				"target/openapi");
+				"target/openapi",
+				true);
 	}
 
 }

@@ -1,4 +1,4 @@
-# spring-openapi
+# spring-openapi (OpenAPI 3 generator)
 Spring Boot OpenAPI 3 generator. It scans provided packages 
 (model and controller) and generates based on reflection, javax validation
 and spring annotations the OpenAPI 3 json. It is able to handle also
@@ -17,16 +17,20 @@ also java client generator finalized, because current tooling is still
 not able to generate client with full OpenAPI 3 discriminator features
 (jackson annotations).
 
-## Core usage
-1. Include dependency
+## Generate spec from code
+### Runtime usage
+Include dependency
+
 ```java
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-schema-generator</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
-2. Instantiate **OpenAPIGenerator**
+
+Instantiate **OpenAPIGenerator**
+
 ```java
 OpenAPIGenerator openAPIGenerator = new OpenAPIGenerator(
                 singletonList("org.spring.openapi.schema.generator.plugin.model.*"),
@@ -94,36 +98,90 @@ try {
 }
 ```
 
-## Maven plugin usage
+### Maven plugin usage
 Maven plugin wraps before mentioned functionality into maven plugin.
 
-```java
+```xml
 <build>
-		<plugins>
-			<plugin>
-				<groupId>com.github.jrcodeza</groupId>
-				<artifactId>spring-openapi-schema-generator-plugin</artifactId>
-				<configuration>
-					<title>Test title</title>
-					<description>Test description</description>
-					<version>1.0.0-TEST</version>
-					<modelPackages>
-						<modelPackage>org.spring.openapi.schema.generator.test.model.*</modelPackage>
-					</modelPackages>
-					<controllerBasePackages>
-						<controllerBasePackage>org.spring.openapi.schema.generator.test.controller.*</controllerBasePackage>
-					</controllerBasePackages>
-					<outputDirectory>target/openapi</outputDirectory>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+    <plugins>
+        <plugin>
+            <groupId>com.github.jrcodeza</groupId>
+            <artifactId>spring-openapi-schema-generator-plugin</artifactId>
+            <configuration>
+                <title>Test title</title>
+                <description>Test description</description>
+                <version>1.0.0-TEST</version>
+                <modelPackages>
+                    <modelPackage>org.spring.openapi.schema.generator.test.model.*</modelPackage>
+                </modelPackages>
+                <controllerBasePackages>
+                    <controllerBasePackage>org.spring.openapi.schema.generator.test.controller.*</controllerBasePackage>
+                </controllerBasePackages>
+                <outputDirectory>target/openapi</outputDirectory>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
 ```
 
 You can see that title, description and version are the OpenAPI info parameters.
 Then you have to define also modelPackages and controllerPackages. Additionally
 you should define also outputDirectory, in our case target/openapi will be the target folder
 where the swagger.json will be saved.
+
+## Generate client from spec
+
+### Generate client from spec - Runtime usage
+Include dependency
+
+```java
+<dependency>
+    <groupId>com.github.jrcodeza</groupId>
+    <artifactId>spring-openapi-client-generator</artifactId>
+    <version>1.1.0</version>
+</dependency>
+```
+
+Use generator in code
+
+```java
+new OpenApiClientGenerator().generateClient(
+				"target.package",
+				"pathToOpenApi3Spec",
+				"targetFolder", // e.g. /target/generatedSources/oas
+				true); // should generate interface
+```
+
+### Generate client from spec - Maven plugin usage
+
+1. Include dependency
+```java
+<dependency>
+    <groupId>com.github.jrcodeza</groupId>
+    <artifactId>spring-openapi-client-generator-plugin</artifactId>
+    <version>1.1.0</version>
+</dependency>
+```
+
+2. Add plugin to maven plugins section
+```xml
+<plugin>
+    <groupId>com.github.jrcodeza</groupId>
+    <artifactId>spring-openapi-client-generator-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generateClientFromOpenApi</goal>
+            </goals>
+            <configuration>
+                <outputPackage>test.package</outputPackage>
+                <outputPath>target/generated-sources</outputPath>
+                <schemaPath>src/main/resources/oas3.json</schemaPath>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
 
 ## Contributions
 Pull requests are welcome. If you would like to collaborate more feel free to contact

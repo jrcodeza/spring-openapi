@@ -131,7 +131,7 @@ where the swagger.json will be saved.
 
 ## Generate client from spec
 
-### Generate client from spec - Runtime usage
+### Runtime usage
 Include dependency
 
 ```java
@@ -152,7 +152,7 @@ new OpenApiClientGenerator().generateClient(
 				true); // should generate interface
 ```
 
-### Generate client from spec - Maven plugin usage
+### Maven plugin usage
 
 1. Include dependency
 ```java

@@ -46,6 +46,8 @@ import static org.spring.openapi.client.generator.ClientGeneratorUtils.getNumber
 
 public class ResourceInterfaceGenerator {
 
+	private String targetPackage;
+
 	private final Map<String, Schema> allComponents;
 
 	public ResourceInterfaceGenerator(Map<String, Schema> allComponents) {
@@ -53,6 +55,7 @@ public class ResourceInterfaceGenerator {
 	}
 
 	public void generateResourceInterface(Paths paths, String targetPackage, String outputPath) {
+		this.targetPackage = targetPackage;
 		Map<String, List<OperationData>> resourceMap = new HashMap<>();
 		paths.entrySet().forEach(pathItemEntry -> addToResourceMap(pathItemEntry, resourceMap));
 		resourceMap.entrySet().forEach(resource -> createInterface(resource, targetPackage, outputPath));
@@ -191,11 +194,11 @@ public class ResourceInterfaceGenerator {
 		} else if (equalsIgnoreCase(schema.getType(), "boolean")) {
 			return ClassName.get(JAVA_LANG_PKG, "Boolean");
 		} else if (schema.get$ref() != null) {
-			return ClassName.bestGuess(getNameFromRef(schema.get$ref()));
+			return ClassName.bestGuess(targetPackage + "." + getNameFromRef(schema.get$ref()));
 		} else if (schema instanceof ComposedSchema && CollectionUtils.isNotEmpty(((ComposedSchema) schema).getAllOf())) {
-			return ClassName.bestGuess(determineParentClassNameUsingOneOf(schema, "innerArray", allComponents));
+			return ClassName.bestGuess(targetPackage + "." + determineParentClassNameUsingOneOf(schema, "innerArray", allComponents));
 		} else if (schema.getDiscriminator() != null) {
-			return ClassName.bestGuess(determineParentClassNameUsingDiscriminator(schema, "innerArray"));
+			return ClassName.bestGuess(targetPackage + "." + determineParentClassNameUsingDiscriminator(schema, "innerArray"));
 		} else if (equalsIgnoreCase(schema.getType(), "object") && isFile(schema.getProperties())) {
 			return ClassName.get(File.class);
 		}
@@ -262,7 +265,7 @@ public class ResourceInterfaceGenerator {
 	}
 
 	private ParameterSpec.Builder createSimpleParameterSpec(String packageName, String className, String parameterName) {
-		ClassName simpleFieldClassName = packageName == null ? ClassName.bestGuess(className) : ClassName.get(packageName, className);
+		ClassName simpleFieldClassName = packageName == null ? ClassName.bestGuess(targetPackage + "." + className) : ClassName.get(packageName, className);
 		return ParameterSpec.builder(simpleFieldClassName, parameterName);
 	}
 

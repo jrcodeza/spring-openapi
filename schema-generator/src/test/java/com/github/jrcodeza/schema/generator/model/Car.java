@@ -13,6 +13,8 @@ import com.github.jrcodeza.OpenApiExamples;
 })
 public class Car extends Product {
 
+    public static final String SHOULD_BE_IGNORED_BECAUSE_STATIC = "TestValue";
+
     @Min(0)
     @Max(1000)
     private Integer torque;

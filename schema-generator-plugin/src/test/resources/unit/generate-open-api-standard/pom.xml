@@ -34,6 +34,14 @@
 						<controllerBasePackage>com.github.jrcodeza.schema.generator.plugin.controller.*</controllerBasePackage>
 					</controllerBasePackages>
 					<outputDirectory>target/openapi</outputDirectory>
+					<schemaFieldInterceptors>
+						<schemaFieldInterceptor>com.github.jrcodeza.schema.generator.plugin.interceptor.TestSchemaFieldInterceptor</schemaFieldInterceptor>
+					</schemaFieldInterceptors>
+					<operationInterceptors>
+						<operationInterceptor>com.github.jrcodeza.schema.generator.plugin.interceptor.TestOperationInterceptor</operationInterceptor>
+					</operationInterceptors>
+					<generateExamples>true</generateExamples>
+					<openApiExamplesResolver>com.github.jrcodeza.schema.generator.plugin.example.TestExampleResolver</openApiExamplesResolver>
 				</configuration>
 			</plugin>
 		</plugins>

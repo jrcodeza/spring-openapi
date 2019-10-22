@@ -25,6 +25,7 @@ import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -111,10 +112,10 @@ public class OpenAPIGenerator {
         if (openApiGeneratorConfig.isGenerateExamples()) {
             OperationParameterExampleInterceptor operationParameterExampleInterceptor =
                     new OperationParameterExampleInterceptor(openApiGeneratorConfig.getOpenApiExampleResolver());
-            requestBodyInterceptors.add(operationParameterExampleInterceptor);
-            schemaFieldInterceptors.add(operationParameterExampleInterceptor);
-            operationParameterInterceptors.add(operationParameterExampleInterceptor);
-            schemaInterceptors.add(operationParameterExampleInterceptor);
+            addInterceptor(requestBodyInterceptors, operationParameterExampleInterceptor);
+            addInterceptor(schemaFieldInterceptors, operationParameterExampleInterceptor);
+            addInterceptor(operationParameterInterceptors, operationParameterExampleInterceptor);
+            addInterceptor(schemaInterceptors, operationParameterExampleInterceptor);
         }
     }
 
@@ -140,6 +141,12 @@ public class OpenAPIGenerator {
 
     public void addGlobalHeader(String name, String description, boolean required) {
         globalHeaders.add(new Header(name, description, required));
+    }
+
+    private <T, U extends T> void addInterceptor(List<T> interceptors, U interceptor) {
+        if (interceptors.stream().noneMatch(o -> StringUtils.equalsIgnoreCase(o.getClass().getName(), interceptor.getClass().getName()))) {
+            interceptors.add(interceptor);
+        }
     }
 
     private Paths createPathsWrapper() {

@@ -187,7 +187,7 @@ public class ResourceInterfaceGenerator {
 	}
 
 	private ClassName determineTypeName(Schema<?> schema) {
-		if (equalsIgnoreCase(schema.getType(), "string")) {
+		if (equalsIgnoreCase(schema.getType(), "string") && !StringUtils.equalsIgnoreCase(schema.getFormat(), "binary")) {
 			return getStringGenericClassName(schema);
 		} else if (equalsIgnoreCase(schema.getType(), "integer") || equalsIgnoreCase(schema.getType(), "number")) {
 			return getNumberGenericClassName(schema);
@@ -199,7 +199,7 @@ public class ResourceInterfaceGenerator {
 			return ClassName.bestGuess(targetPackage + "." + determineParentClassNameUsingOneOf(schema, "innerArray", allComponents));
 		} else if (schema.getDiscriminator() != null) {
 			return ClassName.bestGuess(targetPackage + "." + determineParentClassNameUsingDiscriminator(schema, "innerArray"));
-		} else if (equalsIgnoreCase(schema.getType(), "object") && isFile(schema.getProperties())) {
+		} else if ((equalsIgnoreCase(schema.getType(), "object") || equalsIgnoreCase(schema.getType(), "string")) && isFile(schema.getProperties())) {
 			return ClassName.get(File.class);
 		}
 		return ClassName.get(JAVA_LANG_PKG, "Object");

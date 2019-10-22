@@ -51,14 +51,15 @@ public class OpenApiClientGenerator {
 	private Map<String, Schema> allComponents;
 
 	public void generateClient(String targetPackage, String openApiSchemaPath, String outputPath) {
-		generateClient(targetPackage, openApiSchemaPath, outputPath, true);
+		generateClient(targetPackage, openApiSchemaPath, outputPath, true, false);
 	}
 
-	public void generateClient(String targetPackage, String openApiSchemaPath, String outputPath, boolean generateResourceInterface) {
+	public void generateClient(String targetPackage, String openApiSchemaPath, String outputPath, boolean generateResourceInterface,
+							   boolean generateDiscriminatorProperty) {
 		try {
 			OpenAPI openAPI = IntegrationObjectMapperFactory.createJson().readValue(new File(openApiSchemaPath), OpenAPI.class);
 			allComponents = openAPI.getComponents().getSchemas();
-			allComponents.entrySet().forEach(schemaEntry -> processSchemaEntry(targetPackage, schemaEntry, outputPath));
+			allComponents.entrySet().forEach(schemaEntry -> processSchemaEntry(targetPackage, schemaEntry, outputPath, generateDiscriminatorProperty));
 
 			if (generateResourceInterface) {
 				new ResourceInterfaceGenerator(allComponents).generateResourceInterface(openAPI.getPaths(), targetPackage, outputPath);
@@ -68,7 +69,7 @@ public class OpenApiClientGenerator {
 		}
 	}
 
-	private void processSchemaEntry(String targetPackage, Map.Entry<String, Schema> schemaEntry, String outputPath) {
+	private void processSchemaEntry(String targetPackage, Map.Entry<String, Schema> schemaEntry, String outputPath, boolean generateDiscriminatorProperty) {
 		Schema schema = schemaEntry.getValue();
 		if (schema.getEnum() != null) {
 			TypeSpec.Builder typeSpecBuilder = createEnumClass(schemaEntry.getKey(), schema);
@@ -86,17 +87,23 @@ public class OpenApiClientGenerator {
 			schema = composedSchema.getAllOf().get(1);
 		}
 		if (schema.getDiscriminator() != null) {
-			parseDiscriminator(typeSpecBuilder, schema.getDiscriminator(), targetPackage);
+			parseDiscriminator(typeSpecBuilder, schema.getDiscriminator(), targetPackage, generateDiscriminatorProperty);
 		}
 		if (schema.getProperties() != null) {
-			parseProperties(typeSpecBuilder, schema.getProperties(), targetPackage, schema.getRequired());
+			parseProperties(typeSpecBuilder, schema.getProperties(), targetPackage, schema.getRequired(), schema.getDiscriminator(),
+					generateDiscriminatorProperty);
 		}
 
 		buildTypeSpec(targetPackage, typeSpecBuilder, outputPath);
 	}
 
-	private void parseProperties(TypeSpec.Builder typeSpecBuilder, Map<String, Schema> properties, String targetPackage, List<String> requiredFields) {
-		for (Map.Entry<String, Schema> propertyEntry :  properties.entrySet()) {
+	private void parseProperties(TypeSpec.Builder typeSpecBuilder, Map<String, Schema> properties, String targetPackage, List<String> requiredFields,
+								 Discriminator discriminator, boolean generateDiscriminatorProperty) {
+		String discriminatorPropertyName = discriminator == null ? null : discriminator.getPropertyName();
+		for (Map.Entry<String, Schema> propertyEntry : properties.entrySet()) {
+			if (!generateDiscriminatorProperty && equalsIgnoreCase(propertyEntry.getKey(), discriminatorPropertyName)) {
+				continue;
+			}
 			// type or ref or oneOf + (discriminator)
 			Schema innerSchema = propertyEntry.getValue();
 			FieldSpec.Builder fieldSpecBuilder;
@@ -187,13 +194,13 @@ public class OpenApiClientGenerator {
 	}
 
 	private FieldSpec.Builder createNumberBasedFieldWithFormat(String fieldName, Schema innerSchema, TypeSpec.Builder typeSpecBuilder) {
-		if (innerSchema.getFormat() == null || StringUtils.equalsIgnoreCase(innerSchema.getFormat(), "int32")) {
+		if (innerSchema.getFormat() == null || equalsIgnoreCase(innerSchema.getFormat(), "int32")) {
 			return createSimpleFieldSpec(JAVA_LANG_PKG, "Integer", fieldName, typeSpecBuilder);
-		} else if (StringUtils.equalsIgnoreCase(innerSchema.getFormat(), "int64")) {
+		} else if (equalsIgnoreCase(innerSchema.getFormat(), "int64")) {
 			return createSimpleFieldSpec(JAVA_LANG_PKG, "Long", fieldName, typeSpecBuilder);
-		} else if (StringUtils.equalsIgnoreCase(innerSchema.getFormat(), "float")) {
+		} else if (equalsIgnoreCase(innerSchema.getFormat(), "float")) {
 			return createSimpleFieldSpec(JAVA_LANG_PKG, "Float", fieldName, typeSpecBuilder);
-		} else if (StringUtils.equalsIgnoreCase(innerSchema.getFormat(), "double")) {
+		} else if (equalsIgnoreCase(innerSchema.getFormat(), "double")) {
 			return createSimpleFieldSpec(JAVA_LANG_PKG, "Double", fieldName, typeSpecBuilder);
 		} else {
 			return createSimpleFieldSpec(JAVA_LANG_PKG, "Integer", fieldName, typeSpecBuilder);
@@ -270,14 +277,17 @@ public class OpenApiClientGenerator {
 				.build());
 	}
 
-	private void parseDiscriminator(TypeSpec.Builder typeSpecBuilder, Discriminator discriminator, String targetPackage) {
+	private void parseDiscriminator(TypeSpec.Builder typeSpecBuilder, Discriminator discriminator, String targetPackage,
+									boolean generateDiscriminatorProperty) {
 		if (discriminator.getPropertyName() != null) {
-			AnnotationSpec jsonTypeInfoAnnotation = AnnotationSpec.builder(JsonTypeInfo.class)
+			AnnotationSpec.Builder annotationSpecBuilder = AnnotationSpec.builder(JsonTypeInfo.class)
 					.addMember("use", "JsonTypeInfo.Id.NAME")
 					.addMember("include", "JsonTypeInfo.As.PROPERTY")
-					.addMember("property", "$S", discriminator.getPropertyName())
-					.build();
-			typeSpecBuilder.addAnnotation(jsonTypeInfoAnnotation);
+					.addMember("property", "$S", discriminator.getPropertyName());
+			if (generateDiscriminatorProperty) {
+				annotationSpecBuilder.addMember("visible", "true");
+			}
+			typeSpecBuilder.addAnnotation(annotationSpecBuilder.build());
 		}
 		if (discriminator.getMapping() != null) {
 			List<AnnotationSpec> annotationSpecs = discriminator.getMapping().entrySet().stream()

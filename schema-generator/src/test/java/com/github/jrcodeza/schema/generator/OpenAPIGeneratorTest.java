@@ -55,7 +55,7 @@ public class OpenAPIGeneratorTest {
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
             String generated = objectMapper.writeValueAsString(openAPI);
-            JSONAssert.assertEquals(getResourceFileAsString(pathToExpectedFile), generated, false);
+            JSONAssert.assertEquals(getResourceFileAsString(pathToExpectedFile), generated, true);
         } catch (JsonProcessingException | JSONException e) {
             e.printStackTrace();
         }

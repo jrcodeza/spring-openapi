@@ -21,7 +21,9 @@ import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 import org.springframework.util.ReflectionUtils;
 
 import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static com.github.jrcodeza.schema.generator.util.GeneratorUtils.shouldBeIgnored;
@@ -45,11 +47,12 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         schema.setType("object");
         schema.setProperties(getClassProperties(clazz, generationContext, requiredFields));
 
-        if (!requiredFields.isEmpty()) {
-            schema.setRequired(requiredFields);
-        }
+        updateRequiredFields(schema, requiredFields);
+
         if (generationContext.getInheritanceMap().containsKey(clazz.getName())) {
-            schema.setDiscriminator(createDiscriminator(generationContext.getInheritanceMap().get(clazz.getName())));
+            Discriminator discriminator = createDiscriminator(generationContext.getInheritanceMap().get(clazz.getName()));
+            schema.setDiscriminator(discriminator);
+            enrichWithDiscriminatorProperty(schema, discriminator);
         }
         if (clazz.getSuperclass() != null && isInPackagesToBeScanned(clazz.getSuperclass(), generationContext)) {
             return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
@@ -57,13 +60,29 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         return schema;
     }
 
+    private void updateRequiredFields(Schema schema, List<String> requiredFields) {
+        if (requiredFields == null || requiredFields.isEmpty()) {
+            return;
+        }
+        if (schema.getRequired() == null) {
+            schema.setRequired(requiredFields);
+            return;
+        }
+        schema.getRequired().addAll(requiredFields);
+    }
+
+    private void enrichWithDiscriminatorProperty(Schema schema, Discriminator discriminator) {
+        if (schema != null && !schema.getProperties().containsKey(discriminator.getPropertyName())) {
+            schema.getRequired().add(discriminator.getPropertyName());
+            schema.getProperties().put(discriminator.getPropertyName(), new StringSchema());
+        }
+    }
+
     private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
         if (superclass.getAnnotation(JsonSubTypes.class) == null) {
             List<String> requiredFields = new ArrayList<>();
             schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
-            if (!requiredFields.isEmpty()) {
-                schema.setRequired(requiredFields);
-            }
+            updateRequiredFields(schema, requiredFields);
             if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
                 return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass());
             }

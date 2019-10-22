@@ -1127,6 +1127,7 @@
       },
       "Customer": {
         "required": [
+          "vip",
           "id"
         ],
         "type": "object",
@@ -1217,6 +1218,9 @@
       },
       "Product": {
         "required": [
+          "amount",
+          "price",
+          "type",
           "id"
         ],
         "type": "object",
@@ -1234,6 +1238,9 @@
           "id": {
             "type": "string",
             "description": ". Test schemaField interceptor"
+          },
+          "type": {
+            "type": "string"
           }
         },
         "description": ". Test schema interceptors",

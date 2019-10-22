@@ -1036,6 +1036,7 @@
               "discriminator": {
                 "propertyName": "type",
                 "mapping": {
+                  "van": "Van",
                   "car": "Car",
                   "laptop": "Laptop"
                 }
@@ -1043,6 +1044,9 @@
               "oneOf": [
                 {
                   "$ref": "#/components/schemas/Laptop"
+                },
+                {
+                  "$ref": "#/components/schemas/Van"
                 },
                 {
                   "$ref": "#/components/schemas/Car"
@@ -1108,6 +1112,24 @@
           }
         ]
       },
+      "Van": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Car"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "maxLoad": {
+                "type": "integer",
+                "description": ". Test schemaField interceptor",
+                "format": "int32"
+              }
+            }
+          }
+        ]
+      },
       "Customer": {
         "required": [
           "vip",
@@ -1129,6 +1151,7 @@
             "discriminator": {
               "propertyName": "type",
               "mapping": {
+                "van": "Van",
                 "car": "Car",
                 "laptop": "Laptop"
               }
@@ -1136,6 +1159,9 @@
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Laptop"
+              },
+              {
+                "$ref": "#/components/schemas/Van"
               },
               {
                 "$ref": "#/components/schemas/Car"
@@ -1230,6 +1256,7 @@
         "discriminator": {
           "propertyName": "type",
           "mapping": {
+            "van": "Van",
             "car": "Car",
             "laptop": "Laptop"
           }
@@ -1261,6 +1288,7 @@
               "discriminator": {
                 "propertyName": "type",
                 "mapping": {
+                  "van": "Van",
                   "car": "Car",
                   "laptop": "Laptop"
                 }
@@ -1268,6 +1296,9 @@
               "oneOf": [
                 {
                   "$ref": "#/components/schemas/Laptop"
+                },
+                {
+                  "$ref": "#/components/schemas/Van"
                 },
                 {
                   "$ref": "#/components/schemas/Car"
@@ -1404,6 +1435,7 @@
               "discriminator": {
                 "propertyName": "type",
                 "mapping": {
+                  "van": "Van",
                   "car": "Car",
                   "laptop": "Laptop"
                 }
@@ -1411,6 +1443,9 @@
               "oneOf": [
                 {
                   "$ref": "#/components/schemas/Laptop"
+                },
+                {
+                  "$ref": "#/components/schemas/Van"
                 },
                 {
                   "$ref": "#/components/schemas/Car"

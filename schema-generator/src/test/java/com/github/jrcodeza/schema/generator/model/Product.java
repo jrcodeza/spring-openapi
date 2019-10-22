@@ -11,6 +11,7 @@ import java.math.BigDecimal;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Car.class, name = "car"),
+        @JsonSubTypes.Type(value = Van.class, name = "van"),
         @JsonSubTypes.Type(value = Laptop.class, name = "laptop")
 })
 public class Product extends Entity {

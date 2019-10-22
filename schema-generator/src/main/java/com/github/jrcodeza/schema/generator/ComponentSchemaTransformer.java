@@ -79,7 +79,9 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     }
 
     private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
-        if (superclass.getAnnotation(JsonSubTypes.class) == null) {
+        if (!hasJsonSubTypesInHierarchy(superclass)) {
+            // adding properties from parent classes is present due to swagger ui bug, after using different ui
+            // this becomes relevant only for third party packages
             List<String> requiredFields = new ArrayList<>();
             schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
             updateRequiredFields(schema, requiredFields);
@@ -95,6 +97,16 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
             return composedSchema;
         }
+    }
+
+    private boolean hasJsonSubTypesInHierarchy(Class<?> superclass) {
+        if (superclass.getAnnotation(JsonSubTypes.class) != null) {
+            return true;
+        }
+        if (superclass.getSuperclass() == null || "java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
+            return false;
+        }
+        return hasJsonSubTypesInHierarchy(superclass.getSuperclass());
     }
 
     private Map<String, Schema> getClassProperties(Class<?> clazz, GenerationContext generationContext, List<String> requiredFields) {

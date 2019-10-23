@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ReflectionUtils;
 
 import io.swagger.v3.oas.models.media.ComposedSchema;
@@ -71,10 +73,23 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         schema.getRequired().addAll(requiredFields);
     }
 
+    private void updateSchemaProperties(Schema schema, String propertyName, Schema propertyValue) {
+        if (StringUtils.isBlank(propertyName) || propertyValue == null) {
+            return;
+        }
+        if (schema.getProperties() == null) {
+            schema.setProperties(new HashMap<>());
+        }
+        schema.getProperties().put(propertyName, propertyValue);
+    }
+
     private void enrichWithDiscriminatorProperty(Schema schema, Discriminator discriminator) {
         if (schema != null && !schema.getProperties().containsKey(discriminator.getPropertyName())) {
-            schema.getRequired().add(discriminator.getPropertyName());
-            schema.getProperties().put(discriminator.getPropertyName(), new StringSchema());
+            List<String> discriminatorTypeRequiredProperty = new ArrayList<>();
+            discriminatorTypeRequiredProperty.add(discriminator.getPropertyName());
+
+            updateSchemaProperties(schema, discriminator.getPropertyName(), new StringSchema());
+            updateRequiredFields(schema, discriminatorTypeRequiredProperty);
         }
     }
 

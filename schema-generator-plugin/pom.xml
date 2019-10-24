@@ -4,12 +4,12 @@
     <parent>
         <groupId>com.github.jrcodeza</groupId>
         <artifactId>spring-openapi</artifactId>
-        <version>1.2.0</version>
+        <version>1.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>spring-openapi-schema-generator-plugin</artifactId>
 
-    <version>1.2.0</version>
+    <version>1.2.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Spring Open API - Schema generator plugin</name>

@@ -20,6 +20,11 @@ not able to generate client with full OpenAPI 3 discriminator features
 ## Current version
 1.2.0
 
+## Example project
+You can check this repository https://github.com/jrcodeza/spring-openapi-example for an example
+usage. It shows spec to code and also code to spec generation using maven plugins. It contains
+simple REST resources, model (including inheritance), interceptors and examples resolver.
+
 ## Annotations
 ### @OpenApiExample
 You can define it on class, method, parameter or field. There are 2 main use cases:

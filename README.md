@@ -25,6 +25,12 @@ You can check this repository https://github.com/jrcodeza/spring-openapi-example
 usage. It shows spec to code and also code to spec generation using maven plugins. It contains
 simple REST resources, model (including inheritance), interceptors and examples resolver.
 
+## OpenAPI UI interpreter
+If you need to display OpenAPI v3 spec in browser you can have a look also on **oas-ui**
+plugin https://github.com/vahanito/oas-ui (which was developed together with spring-openapi) . 
+It supports searching of components and resources. Correctly displays inheritance also 
+with discriminator info. You can use it in react as plugin or also as standalone bundle js. 
+
 ## Annotations
 ### @OpenApiExample
 You can define it on class, method, parameter or field. There are 2 main use cases:

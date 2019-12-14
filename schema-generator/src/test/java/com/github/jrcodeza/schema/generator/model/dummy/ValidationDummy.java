@@ -40,6 +40,12 @@ public class ValidationDummy {
     @Deprecated
     private String javaDeprecated;
 
+    @Schema(accessMode = Schema.AccessMode.WRITE_ONLY)
+    private String writeOnly;
+
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private String readOnly;
+
     public BigDecimal getDecimalRange() {
         return decimalRange;
     }
@@ -102,5 +108,21 @@ public class ValidationDummy {
 
     public void setJavaDeprecated(String javaDeprecated) {
         this.javaDeprecated = javaDeprecated;
+    }
+
+    public String getWriteOnly() {
+        return writeOnly;
+    }
+
+    public void setWriteOnly(String writeOnly) {
+        this.writeOnly = writeOnly;
+    }
+
+    public String getReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(String readOnly) {
+        this.readOnly = readOnly;
     }
 }

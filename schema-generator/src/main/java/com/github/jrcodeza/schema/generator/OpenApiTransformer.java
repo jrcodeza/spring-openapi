@@ -264,8 +264,17 @@ public abstract class OpenApiTransformer {
 				schemaAnnotation -> {
 					schema.setDeprecated(schemaAnnotation.deprecated());
 					schema.setDescription(schemaAnnotation.description());
+					enrichWithAccessMode(schema, schemaAnnotation);
 				});
 		enrichWithAnnotation(Deprecated.class, annotations, deprecatedAnnotation -> schema.setDeprecated(true));
+	}
+
+	private void enrichWithAccessMode(Schema<?> schema, io.swagger.v3.oas.annotations.media.Schema schemaAnnotation) {
+		if (schemaAnnotation.accessMode() == io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY) {
+			schema.setReadOnly(true);
+		} else if (schemaAnnotation.accessMode() == io.swagger.v3.oas.annotations.media.Schema.AccessMode.WRITE_ONLY) {
+			schema.setWriteOnly(true);
+		}
 	}
 
 	protected  <T> void enrichWithAnnotation(Class<T> annotationClazz, Annotation[] annotations, Consumer<T> consumer) {

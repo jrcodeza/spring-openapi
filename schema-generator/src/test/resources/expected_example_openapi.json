@@ -57,6 +57,60 @@
         }
       }
     },
+    "/lists/list-without-generics": {
+      "get": {
+        "tags": [
+          "list-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarsWithListWithoutGenericsUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "torque",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cars/{carId}": {
       "get": {
         "tags": [
@@ -484,6 +538,60 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lists/with-response-entity": {
+      "get": {
+        "tags": [
+          "list-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarsWithResponseEntityUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "torque",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Car"
+                  }
                 }
               }
             }

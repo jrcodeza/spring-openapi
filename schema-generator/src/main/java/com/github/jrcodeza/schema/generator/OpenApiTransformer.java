@@ -20,11 +20,12 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
+import com.github.jrcodeza.schema.generator.model.GenerationContext;
+import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.jrcodeza.schema.generator.model.GenerationContext;
-import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
@@ -32,9 +33,9 @@ import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 
+import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 
 public abstract class OpenApiTransformer {
 
@@ -88,6 +89,10 @@ public abstract class OpenApiTransformer {
 
 	protected Schema parseArraySignature(Class<?> elementTypeSignature, GenerationContext generationContext, Annotation[] annotations) {
 		ArraySchema arraySchema = new ArraySchema();
+		if (elementTypeSignature == null) {
+			arraySchema.setItems(createObjectSchema());
+			return arraySchema;
+		}
 		Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
 		if (elementTypeSignature.isPrimitive()) {
 			// primitive type like int
@@ -125,6 +130,12 @@ public abstract class OpenApiTransformer {
 		itemSchema.setType("object");
 		arraySchema.setItems(itemSchema);
 		return arraySchema;
+	}
+
+	private Schema<?> createObjectSchema() {
+		Schema<?> schema = new Schema<>();
+		schema.setType("object");
+		return schema;
 	}
 
 	protected Discriminator createDiscriminator(InheritanceInfo inheritanceInfo) {

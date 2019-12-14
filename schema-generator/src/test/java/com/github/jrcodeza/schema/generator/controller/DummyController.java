@@ -29,8 +29,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
 @RestController
 @RequestMapping("/dummy")
 public class DummyController {

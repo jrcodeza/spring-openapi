@@ -3,6 +3,7 @@ package com.github.jrcodeza.schema.generator.controller;
 import java.util.List;
 
 import com.github.jrcodeza.schema.generator.model.Car;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

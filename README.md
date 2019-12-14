@@ -20,6 +20,8 @@ not able to generate client with full OpenAPI 3 discriminator features
 ## Current version
 **1.3.0**
 
+Release notes: https://github.com/jrcodeza/spring-openapi/blob/master/CHANGELOG.md 
+
 1.2.1 - to ensure compatiblity with swagger ui for bigger inheritance structures.
 This version models inheritance using allOf only if discriminator (JsonSubTypes) is found
 in inheritance hierarchy. If not, it takes all attributes from parent classes

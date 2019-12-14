@@ -18,7 +18,12 @@ not able to generate client with full OpenAPI 3 discriminator features
 (jackson annotations).
 
 ## Current version
-1.2.0
+**1.3.0**
+
+1.2.1 - to ensure compatiblity with swagger ui for bigger inheritance structures.
+This version models inheritance using allOf only if discriminator (JsonSubTypes) is found
+in inheritance hierarchy. If not, it takes all attributes from parent classes
+and adds them to the current one. See tests for more info.
 
 ## Example project
 You can check this repository https://github.com/jrcodeza/spring-openapi-example for an example
@@ -84,7 +89,7 @@ Include dependency
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-schema-generator</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 
@@ -225,7 +230,7 @@ Include dependency
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-client-generator</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 
@@ -246,7 +251,7 @@ new OpenApiClientGenerator().generateClient(
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-client-generator-plugin</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 

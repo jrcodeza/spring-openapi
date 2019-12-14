@@ -1136,51 +1136,51 @@
   "components": {
     "schemas": {
       "Order": {
-        "required": [
-          "id"
-        ],
-        "type": "object",
-        "properties": {
-          "dateTime": {
-            "type": "string",
-            "description": ". Test schemaField interceptor",
-            "format": "date-time"
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
           },
-          "id": {
-            "type": "string",
-            "description": ". Test schemaField interceptor"
-          },
-          "customer": {
-            "description": ". Test schemaField interceptor",
-            "$ref": "#/components/schemas/Customer"
-          },
-          "products": {
-            "type": "array",
-            "description": ". Test schemaField interceptor",
-            "items": {
-              "discriminator": {
-                "propertyName": "type",
-                "mapping": {
-                  "van": "Van",
-                  "car": "Car",
-                  "laptop": "Laptop"
-                }
+          {
+            "type": "object",
+            "properties": {
+              "dateTime": {
+                "type": "string",
+                "description": ". Test schemaField interceptor",
+                "format": "date-time"
               },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/Laptop"
-                },
-                {
-                  "$ref": "#/components/schemas/Van"
-                },
-                {
-                  "$ref": "#/components/schemas/Car"
+              "customer": {
+                "description": ". Test schemaField interceptor",
+                "$ref": "#/components/schemas/Customer"
+              },
+              "products": {
+                "type": "array",
+                "description": ". Test schemaField interceptor",
+                "items": {
+                  "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                      "van": "Van",
+                      "car": "Car",
+                      "laptop": "Laptop"
+                    }
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Laptop"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Van"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Car"
+                    }
+                  ]
                 }
-              ]
+              }
             }
           }
-        },
-        "description": ". Test schema interceptors"
+        ]
       },
       "GenerationContext": {
         "type": "object",
@@ -1256,45 +1256,47 @@
         ]
       },
       "Customer": {
-        "required": [
-          "vip",
-          "id"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": ". Test schemaField interceptor"
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
           },
-          "vip": {
-            "type": "boolean",
-            "description": ". Test schemaField interceptor"
-          },
-          "topCustomerProduct": {
-            "description": "Testing description. Test schemaField interceptor",
-            "deprecated": false,
-            "discriminator": {
-              "propertyName": "type",
-              "mapping": {
-                "van": "Van",
-                "car": "Car",
-                "laptop": "Laptop"
-              }
-            },
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/Laptop"
+          {
+            "required": [
+              "vip"
+            ],
+            "type": "object",
+            "properties": {
+              "vip": {
+                "type": "boolean",
+                "description": ". Test schemaField interceptor"
               },
-              {
-                "$ref": "#/components/schemas/Van"
-              },
-              {
-                "$ref": "#/components/schemas/Car"
+              "topCustomerProduct": {
+                "description": "Testing description. Test schemaField interceptor",
+                "deprecated": false,
+                "discriminator": {
+                  "propertyName": "type",
+                  "mapping": {
+                    "van": "Van",
+                    "car": "Car",
+                    "laptop": "Laptop"
+                  }
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Laptop"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Van"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Car"
+                  }
+                ]
               }
-            ]
+            }
           }
-        },
-        "description": ". Test schema interceptors"
+        ]
       },
       "ValidationDummy": {
         "required": [
@@ -1351,41 +1353,43 @@
         "description": ". Test schema interceptors"
       },
       "Product": {
-        "required": [
-          "amount",
-          "price",
-          "type",
-          "id"
-        ],
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "integer",
-            "description": ". Test schemaField interceptor",
-            "format": "int32"
-          },
-          "price": {
-            "type": "number",
-            "description": ". Test schemaField interceptor",
-            "format": "double"
-          },
-          "id": {
-            "type": "string",
-            "description": ". Test schemaField interceptor"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
         "description": ". Test schema interceptors",
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "van": "Van",
-            "car": "Car",
-            "laptop": "Laptop"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "required": [
+              "amount",
+              "price",
+              "type"
+            ],
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "description": ". Test schemaField interceptor",
+                "format": "int32"
+              },
+              "price": {
+                "type": "number",
+                "description": ". Test schemaField interceptor",
+                "format": "double"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "van": "Van",
+                "car": "Car",
+                "laptop": "Laptop"
+              }
+            }
           }
-        }
+        ]
       },
       "ListDummy": {
         "type": "object",

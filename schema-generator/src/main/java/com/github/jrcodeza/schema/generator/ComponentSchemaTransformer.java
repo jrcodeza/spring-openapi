@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
@@ -56,7 +54,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             schema.setDiscriminator(discriminator);
             enrichWithDiscriminatorProperty(schema, discriminator);
         }
-        if (clazz.getSuperclass() != null && isInPackagesToBeScanned(clazz.getSuperclass(), generationContext)) {
+        if (clazz.getSuperclass() != null) {
             return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
         }
         return schema;
@@ -94,7 +92,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     }
 
     private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
-        if (!hasJsonSubTypesInHierarchy(superclass)) {
+        if (!isInPackagesToBeScanned(superclass, generationContext)) {
             // adding properties from parent classes is present due to swagger ui bug, after using different ui
             // this becomes relevant only for third party packages
             List<String> requiredFields = new ArrayList<>();
@@ -112,16 +110,6 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
             return composedSchema;
         }
-    }
-
-    private boolean hasJsonSubTypesInHierarchy(Class<?> superclass) {
-        if (superclass.getAnnotation(JsonSubTypes.class) != null) {
-            return true;
-        }
-        if (superclass.getSuperclass() == null || "java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
-            return false;
-        }
-        return hasJsonSubTypesInHierarchy(superclass.getSuperclass());
     }
 
     private Map<String, Schema> getClassProperties(Class<?> clazz, GenerationContext generationContext, List<String> requiredFields) {

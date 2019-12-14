@@ -17,6 +17,9 @@ also java client generator finalized, because current tooling is still
 not able to generate client with full OpenAPI 3 discriminator features
 (jackson annotations).
 
+There is also short article describing usage of spring-openapi generator here: 
+https://medium.com/@remenec.jakub/openapi-3-spec-and-client-generation-on-java-spring-application-38a9ba5a2932.
+
 ## Current version
 **1.3.0**
 

@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>com.github.jrcodeza</groupId>
 		<artifactId>spring-openapi</artifactId>
-		<version>1.2.1</version>
+		<version>1.2.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>spring-openapi-client-generator</artifactId>
 
-	<version>1.2.1</version>
+	<version>1.2.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>Spring Open API - Client generator</name>

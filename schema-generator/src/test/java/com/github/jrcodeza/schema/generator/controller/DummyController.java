@@ -148,4 +148,14 @@ public class DummyController {
 	public MultipartFile getFileWithResponseAnnotation() {
 		return null;
 	}
+
+	@GetMapping("duplicate-original")
+	public String duplicateMethod() {
+		return null;
+	}
+
+	@GetMapping("duplicate-clone")
+	public String duplicateMethod(String something) {
+		return null;
+	}
 }

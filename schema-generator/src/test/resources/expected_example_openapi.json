@@ -57,6 +57,31 @@
         }
       }
     },
+    "/dummy/duplicate-clone": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "duplicateMethodUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/lists/list-without-generics": {
       "get": {
         "tags": [
@@ -541,6 +566,31 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/dummy/duplicate-original": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "duplicateMethodUsingGET_1",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }

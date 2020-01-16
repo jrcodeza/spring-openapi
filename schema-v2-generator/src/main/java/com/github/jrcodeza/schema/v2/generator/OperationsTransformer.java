@@ -5,6 +5,7 @@ import io.swagger.models.Operation;
 import io.swagger.models.Path;
 import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.QueryParameter;
+import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.FileProperty;
 import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
@@ -59,6 +60,7 @@ import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
@@ -139,7 +141,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setParameters(transformParameters(method));
 		if (isHttpMethodWithRequestBody(requestMapping.method())) {
-			operation.getParameters().add(createRequestBody(method, getFirstFromArray(requestMapping.consumes())));
+			BodyParameter requestBody = createRequestBody(method, getFirstFromArray(requestMapping.consumes()));
+			if (requestBody != null) {
+				operation.getParameters().add(requestBody);
+			}
 		}
 		operation.setResponses(createApiResponses(method, getFirstFromArray(requestMapping.produces())));
 
@@ -238,14 +243,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			apiResponse.setDescription(HttpStatus.valueOf(Integer.parseInt(responseStatusCode)).getReasonPhrase());
 
 			if (mediaType != null) {
-				ModelImpl model = new ModelImpl();
-				if (mediaType.getName() == null) {
-					model.addProperty("null1", mediaType);
-				} else {
-					model.addProperty(mediaType.getName(), mediaType);
-				}
-
-				apiResponse.setResponseSchema(model);
+				apiResponse.setSchema(mediaType);
 			}
 
 			Map<String, io.swagger.models.Response> apiResponses = new HashMap<>();
@@ -260,8 +258,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			apiResponse.setHeaders(createHeaderResponse(responseAnnotation.headers()));
 
 			if (!StringUtils.containsIgnoreCase(responseAnnotation.responseBody().getSimpleName(), "void")) {
-				ModelImpl model = new ModelImpl();
-				apiResponse.setResponseSchema(model);
+
 
 				Property mediaType;
 				if (isFileResponse(responseAnnotation.responseBody())) {
@@ -274,12 +271,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 					((RefProperty) mediaType).set$ref(CommonConstants.COMPONENT_REF_PREFIX + responseAnnotation.responseBody().getSimpleName());
 				}
 
-				String key = StringUtils.isBlank(produces) ? resolveDefaultContentType(responseAnnotation.responseBody()) : produces;
-				if (key == null) {
-					model.addProperty("null2", mediaType);
-				} else {
-					model.addProperty(key, mediaType);
-				}
+				apiResponse.setSchema(mediaType);
 
 			}
 			apiResponses.put(String.valueOf(responseAnnotation.responseCode()), apiResponse);
@@ -378,7 +370,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setResponses(createApiResponses(method, getFirstFromArray(patchMapping.produces())));
 		operation.setParameters(transformParameters(method));
-		operation.getParameters().add(createRequestBody(method, getFirstFromArray(patchMapping.consumes())));
+		BodyParameter requestBody = createRequestBody(method, getFirstFromArray(patchMapping.consumes()));
+		if (requestBody != null) {
+			operation.getParameters().add(requestBody);
+		}
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(patchMapping.value()), getFirstFromArray(patchMapping.path()));
 
@@ -396,7 +391,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setResponses(createApiResponses(method, getFirstFromArray(putMapping.produces())));
 		operation.setParameters(transformParameters(method));
-		operation.getParameters().add(createRequestBody(method, getFirstFromArray(putMapping.consumes())));
+		BodyParameter requestBody = createRequestBody(method, getFirstFromArray(putMapping.consumes()));
+		if (requestBody != null) {
+			operation.getParameters().add(requestBody);
+		}
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(putMapping.value()), getFirstFromArray(putMapping.path()));
 
@@ -414,7 +412,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setResponses(createApiResponses(method, getFirstFromArray(postMapping.produces())));
 		operation.setParameters(transformParameters(method));
-		operation.getParameters().add(createRequestBody(method, getFirstFromArray(postMapping.consumes())));
+		BodyParameter requestBody = createRequestBody(method, getFirstFromArray(postMapping.consumes()));
+		if (requestBody != null) {
+			operation.getParameters().add(requestBody);
+		}
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(postMapping.value()), getFirstFromArray(postMapping.path()));
 
@@ -445,7 +446,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 			}
 			if (shouldBeIncludedInDocumentation(actualParameter)) {
 				String parameterName = parameterNames[i];
-				io.swagger.models.parameters.Parameter oasParameter = mapQueryParameter(actualParameter, parameterName);
+				io.swagger.models.parameters.Parameter oasParameter;
+					oasParameter = mapQueryParameter(actualParameter, parameterName);
 				if (oasParameter != null) {
 					operationParameterInterceptors.forEach(interceptor -> interceptor.intercept(method, actualParameter, parameterName, oasParameter));
 					result.add(oasParameter);
@@ -534,6 +536,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		requestBody.setRequired(true);
 		requestBody.setSchema(content);
 		requestBody.setDescription("requestBody");
+		requestBody.setName(requestBodyParameter.getName());
 
 		requestBodyInterceptors.forEach(interceptor ->
 												interceptor.intercept(method, requestBodyParameter.getParameter(), requestBodyParameter.getName(), requestBody)
@@ -602,14 +605,14 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private void fillParameterInfo(QueryParameter oasParameter, Parameter parameter, String parameterName) {
-		io.swagger.models.parameters.Parameter schema;
 		Class<?> clazz = parameter.getType();
 		Annotation[] annotations = parameter.getAnnotations();
 
 		if (clazz.isPrimitive()) {
 			parseBaseTypeParameter(oasParameter, clazz, annotations);
 		} else if (clazz.isArray()) {
-			oasParameter.setProperty(parseArraySignature(clazz.getComponentType(), null, annotations));
+			oasParameter.setType("array");
+			oasParameter.setProperty(parseArraySignatureForParameter(clazz.getComponentType(), null, annotations));
 		} else if (clazz.isAssignableFrom(List.class)) {
 			if (!(parameter.getParameterizedType() instanceof ParameterizedType)) {
 				throw new IllegalArgumentException(String.format("List [%s] not being parametrized type.", parameterName));
@@ -620,6 +623,32 @@ public class OperationsTransformer extends OpenApiTransformer {
 		} else {
 			parseBaseTypeParameter(oasParameter, clazz, annotations);
 		}
+	}
+
+	private Property parseArraySignatureForParameter(Class<?> elementTypeSignature, GenerationContext generationContext, Annotation[] annotations) {
+		ArrayProperty arraySchema = new ArrayProperty();
+		Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
+		if (elementTypeSignature.isPrimitive()) {
+			// primitive type like int
+			Property property = mapBaseType(elementTypeSignature);
+			if (property == null) {
+				throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getSimpleName()));
+			}
+			arraySchema.setItems(property);
+			return arraySchema;
+		} else if (isInPackagesToBeScanned(elementTypeSignature, generationContext) || elementTypeSignature.getPackage().getName().startsWith("java.lang")) {
+			Property property = mapBaseType(elementTypeSignature);
+			// basic types like Integer or String
+			if (property != null) {
+				arraySchema.setItems(property);
+				return arraySchema;
+			}
+		}
+
+		ObjectProperty itemSchema = new ObjectProperty();
+		itemSchema.setType("string");
+		arraySchema.setItems(itemSchema);
+		return arraySchema;
 	}
 
 	private String resolveContentType(String userDefinedContentType, Parameter requestBody) {

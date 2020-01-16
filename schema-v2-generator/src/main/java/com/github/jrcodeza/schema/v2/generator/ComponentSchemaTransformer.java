@@ -6,6 +6,7 @@ import io.swagger.models.ModelImpl;
 import io.swagger.models.RefModel;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
+import io.swagger.models.properties.UntypedProperty;
 import org.springframework.util.ReflectionUtils;
 
 import javax.validation.constraints.NotNull;
@@ -40,25 +41,25 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 
 		ModelImpl schema = new ModelImpl();
 		schema.setType("object");
-		schema.setProperties(getClassProperties(clazz, generationContext));
+		getClassProperties(clazz, generationContext).forEach(schema::addProperty);
 
 		if (generationContext.getInheritanceMap().containsKey(clazz.getName())) {
 			InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(clazz.getName());
 			schema.setDiscriminator(inheritanceInfo.getDiscriminatorFieldName());
 		}
 		if (clazz.getSuperclass() != null) {
-			return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
+			return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass(), clazz);
 		}
 		return schema;
 	}
 
-	private Model traverseAndAddProperties(Model schema, GenerationContext generationContext, Class<?> superclass) {
+	private Model traverseAndAddProperties(ModelImpl schema, GenerationContext generationContext, Class<?> superclass, Class<?> clazz) {
 		if (!isInPackagesToBeScanned(superclass, generationContext)) {
 			// adding properties from parent classes is present due to swagger ui bug, after using different ui
 			// this becomes relevant only for third party packages
-			schema.getProperties().putAll(getClassProperties(superclass, generationContext));
+			getClassProperties(superclass, generationContext).forEach(schema::addProperty);
 			if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
-				return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass());
+				return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass(), superclass);
 			}
 			return schema;
 		} else {
@@ -67,6 +68,9 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 
 			ComposedModel composedSchema = new ComposedModel();
 			composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
+			InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(superclass.getName());
+			composedSchema.setVendorExtension("x-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
+			composedSchema.setVendorExtension("x-ms-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
 			return composedSchema;
 		}
 	}
@@ -154,9 +158,9 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 			schema.set$ref(CommonConstants.COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
 			return schema;
 		}
-		// fallback
-		schema.setType("object");
-		return schema;
+		UntypedProperty fallBack = new UntypedProperty();
+		fallBack.setType("object");
+		return fallBack;
 	}
 
 }

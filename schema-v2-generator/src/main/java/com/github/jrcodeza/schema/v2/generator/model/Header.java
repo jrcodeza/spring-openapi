@@ -1,5 +1,8 @@
 package com.github.jrcodeza.schema.v2.generator.model;
 
+import com.github.jrcodeza.OpenApiIgnore;
+
+@OpenApiIgnore
 public class Header {
 
 	private String name;

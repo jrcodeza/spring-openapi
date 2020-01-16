@@ -3,6 +3,9 @@ package com.github.jrcodeza.schema.v2.generator.model;
 import java.util.List;
 import java.util.Map;
 
+import com.github.jrcodeza.OpenApiIgnore;
+
+@OpenApiIgnore
 public class GenerationContext {
 
 	private final List<String> modelPackages;

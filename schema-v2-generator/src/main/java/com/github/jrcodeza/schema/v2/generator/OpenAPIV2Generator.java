@@ -23,8 +23,11 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jrcodeza.OpenApiIgnore;
 import com.github.jrcodeza.schema.v2.generator.config.OpenApiGeneratorConfig;
 import com.github.jrcodeza.schema.v2.generator.config.builder.OpenApiGeneratorConfigBuilder;
@@ -36,13 +39,15 @@ import com.github.jrcodeza.schema.v2.generator.interceptors.SchemaInterceptor;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.model.Header;
 import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 
-public class OpenAPIGenerator {
+public class OpenAPIV2Generator {
 
-	private static Logger logger = LoggerFactory.getLogger(OpenAPIGenerator.class);
+	private static Logger logger = LoggerFactory.getLogger(OpenAPIV2Generator.class);
 
 	private static final String DEFAULT_DISCRIMINATOR_NAME = "type";
 
@@ -61,16 +66,16 @@ public class OpenAPIGenerator {
 
 	private final List<Header> globalHeaders;
 
-	public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
+	public OpenAPIV2Generator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
 		this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 	}
 
-	public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info,
-							List<SchemaInterceptor> schemaInterceptors,
-							List<SchemaFieldInterceptor> schemaFieldInterceptors,
-							List<OperationParameterInterceptor> operationParameterInterceptors,
-							List<OperationInterceptor> operationInterceptors,
-							List<RequestBodyInterceptor> requestBodyInterceptors) {
+	public OpenAPIV2Generator(List<String> modelPackages, List<String> controllerBasePackages, Info info,
+							  List<SchemaInterceptor> schemaInterceptors,
+							  List<SchemaFieldInterceptor> schemaFieldInterceptors,
+							  List<OperationParameterInterceptor> operationParameterInterceptors,
+							  List<OperationInterceptor> operationInterceptors,
+							  List<RequestBodyInterceptor> requestBodyInterceptors) {
 		this.modelPackages = modelPackages;
 		this.controllerBasePackages = controllerBasePackages;
 		this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors);
@@ -91,6 +96,16 @@ public class OpenAPIGenerator {
 
 	public Swagger generate() {
 		return generate(OpenApiGeneratorConfigBuilder.defaultConfig().build());
+	}
+
+	public String generateJson() throws JsonProcessingException {
+		Swagger openAPI = generate(OpenApiGeneratorConfigBuilder.defaultConfig().build());
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		DocumentContext doc = JsonPath.parse(objectMapper.writeValueAsString(openAPI));
+		doc.delete("$..responseSchema");
+		doc.delete("$..originalRef");
+		return doc.jsonString();
 	}
 
 	public Swagger generate(OpenApiGeneratorConfig openApiGeneratorConfig) {

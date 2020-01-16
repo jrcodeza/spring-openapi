@@ -113,11 +113,6 @@ public class DummyController {
 		return null;
 	}
 
-	@GetMapping(path = "/requestParamList")
-	public ValidationDummy requestParamList(@RequestParam List<ValidationDummy> validationDummies) {
-		return null;
-	}
-
 	@PostMapping(path = "/requestBodyList")
 	public ValidationDummy requestBodyList(@RequestBody List<ValidationDummy> validationDummies,
 										   @RequestParam @OpenApiIgnore String toBeIgnored) {

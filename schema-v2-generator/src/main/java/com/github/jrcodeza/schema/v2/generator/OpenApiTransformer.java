@@ -31,17 +31,17 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
-import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 public abstract class OpenApiTransformer {
 
@@ -96,6 +96,9 @@ public abstract class OpenApiTransformer {
 		} else if (LocalDateTime.class.equals(type) || LocalTime.class.equals(type)) {
 			oasParameter.setType("string");
 			oasParameter.setFormat("date-time");
+		}  else if (type.isEnum()) {
+			oasParameter.setType("string");
+			oasParameter.setEnumValue(asList(type.getEnumConstants()));
 		} else {
 			oasParameter.setProperty(createRefSchema(type, null));
 		}
@@ -151,17 +154,10 @@ public abstract class OpenApiTransformer {
 			String className = elementTypeSignature.getName();
 			// is inheritance needed
 			if (generationContext != null && generationContext.getInheritanceMap() != null && generationContext.getInheritanceMap().containsKey(className)) {
-				InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(className);
 				RefProperty itemSchema = new RefProperty();
-				//				try {
-				//					String subclassName = inheritanceInfo.getDiscriminatorClassMap().values().stream().findFirst().orElseThrow(RuntimeException::new);
-				//					Class<?> clazz = Class.forName(subclassName);
 				itemSchema.set$ref(CommonConstants.COMPONENT_REF_PREFIX + elementTypeSignature.getSimpleName());
 				arraySchema.setItems(itemSchema);
 				return arraySchema;
-				//				} catch (ClassNotFoundException e) {
-				//					e.printStackTrace();
-				//				}
 			}
 			// else do ref
 			RefProperty itemSchema = new RefProperty();
@@ -203,7 +199,7 @@ public abstract class OpenApiTransformer {
 	protected <T> ModelImpl createEnumSchema(T[] enumConstants) {
 		ModelImpl schema = new ModelImpl();
 		schema.setType("string");
-		schema.setEnum(Stream.of(enumConstants).map(Object::toString).collect(Collectors.toList()));
+		schema.setEnum(Stream.of(enumConstants).map(Object::toString).collect(toList()));
 		return schema;
 	}
 
@@ -290,6 +286,11 @@ public abstract class OpenApiTransformer {
 				|| LocalDateTime.class.equals(elementTypeSignature) || LocalTime.class.equals(elementTypeSignature)) {
 				StringProperty property = new StringProperty();
 				property.setType("string");
+				return property;
+			} else if (elementTypeSignature.isEnum()) {
+				StringProperty property = new StringProperty();
+				property.setType("string");
+				property.setEnum(Arrays.stream(elementTypeSignature.getEnumConstants()).map(Object::toString).collect(toList()));
 				return property;
 			} else if (boolean.class.equals(elementTypeSignature) || Boolean.class.equals(elementTypeSignature)) {
 				BooleanProperty property = new BooleanProperty();

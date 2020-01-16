@@ -147,6 +147,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			}
 		}
 		operation.setResponses(createApiResponses(method, getFirstFromArray(requestMapping.produces())));
+		applyAnnotationsForOperation(operation, method.getAnnotations());
 
 		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 
@@ -352,6 +353,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		operation.setParameters(transformParameters(method));
 		operation.setResponses(createApiResponses(method, getFirstFromArray(getMapping.produces())));
+		applyAnnotationsForOperation(operation, method.getAnnotations());
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(getMapping.value()), getFirstFromArray(getMapping.path()));
 
@@ -374,6 +376,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (requestBody != null) {
 			operation.getParameters().add(requestBody);
 		}
+		applyAnnotationsForOperation(operation, method.getAnnotations());
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(patchMapping.value()), getFirstFromArray(patchMapping.path()));
 
@@ -395,6 +398,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (requestBody != null) {
 			operation.getParameters().add(requestBody);
 		}
+		applyAnnotationsForOperation(operation, method.getAnnotations());
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(putMapping.value()), getFirstFromArray(putMapping.path()));
 
@@ -416,11 +420,19 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (requestBody != null) {
 			operation.getParameters().add(requestBody);
 		}
-
+		applyAnnotationsForOperation(operation, method.getAnnotations());
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(postMapping.value()), getFirstFromArray(postMapping.path()));
 
 		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPost(operation));
+	}
+
+	private void applyAnnotationsForOperation(Operation operation, Annotation[] annotations) {
+		 asList(annotations).forEach(annotation -> {
+		 	if (annotation instanceof Deprecated) {
+		 		operation.setVendorExtension("x-deprecated", true);
+			}
+		 });
 	}
 
 	private void updateOperationsMap(String url, Map<String, Path> existingMap, Consumer<Path> pathItemUpdater) {

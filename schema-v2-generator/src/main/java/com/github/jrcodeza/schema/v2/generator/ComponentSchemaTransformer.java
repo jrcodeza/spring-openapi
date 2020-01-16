@@ -69,8 +69,10 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 			ComposedModel composedSchema = new ComposedModel();
 			composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
 			InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(superclass.getName());
-			composedSchema.setVendorExtension("x-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
-			composedSchema.setVendorExtension("x-ms-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
+			if (inheritanceInfo != null) {
+				composedSchema.setVendorExtension("x-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
+				composedSchema.setVendorExtension("x-ms-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
+			}
 			return composedSchema;
 		}
 	}

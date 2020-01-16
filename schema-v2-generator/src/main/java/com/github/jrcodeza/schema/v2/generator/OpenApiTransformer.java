@@ -216,6 +216,8 @@ public abstract class OpenApiTransformer {
 		} else if (annotation instanceof Size) {
 			schema.minLength(((Size) annotation).min());
 			schema.maxLength(((Size) annotation).max());
+		} else if (annotation instanceof Deprecated) {
+			schema.setVendorExtension("x-deprecated", true);
 		}
 	}
 
@@ -228,6 +230,8 @@ public abstract class OpenApiTransformer {
 			schema.setMinimum(BigDecimal.valueOf(((Min) annotation).value()));
 		} else if (annotation instanceof Max) {
 			schema.setMaximum(BigDecimal.valueOf(((Max) annotation).value()));
+		} else if (annotation instanceof Deprecated) {
+			schema.setVendorExtension("x-deprecated", true);
 		}
 	}
 
@@ -246,6 +250,8 @@ public abstract class OpenApiTransformer {
 		} else if (annotation instanceof Size) {
 			schema.setMinLength(((Size) annotation).min());
 			schema.setMaxLength(((Size) annotation).max());
+		} else if (annotation instanceof Deprecated) {
+			schema.setVendorExtension("x-deprecated", true);
 		}
 	}
 
@@ -253,6 +259,8 @@ public abstract class OpenApiTransformer {
 		if (annotation instanceof Size) {
 			schema.setMinItems(((Size) annotation).min());
 			schema.setMaxItems(((Size) annotation).max());
+		} else if (annotation instanceof Deprecated) {
+			schema.setVendorExtension("x-deprecated", true);
 		}
 	}
 

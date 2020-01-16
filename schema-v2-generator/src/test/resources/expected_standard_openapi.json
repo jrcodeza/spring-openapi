@@ -1014,7 +1014,9 @@
                     }
                 }
             ],
-            "description": ". Test schema interceptors"
+            "description": ". Test schema interceptors",
+            "x-discriminator-value": "laptop",
+            "x-ms-discriminator-value": "laptop"
         },
         "Van": {
             "allOf": [
@@ -1110,7 +1112,8 @@
                 },
                 "javaDeprecated": {
                     "type": "string",
-                    "description": ". Test schemaField interceptor"
+                    "description": ". Test schemaField interceptor",
+                    "x-deprecated": true
                 }
             },
             "description": ". Test schema interceptors"
@@ -1156,7 +1159,12 @@
                     "type": "array",
                     "description": ". Test schemaField interceptor",
                     "items": {
-                        "$ref": "#/definitions/CarType"
+                        "type": "string",
+                        "enum": [
+                            "PERSONAL",
+                            "TRUCK",
+                            "VAN"
+                        ]
                     }
                 },
                 "products": {
@@ -1235,7 +1243,9 @@
                     }
                 }
             ],
-            "description": ". Test schema interceptors"
+            "description": ". Test schema interceptors",
+            "x-discriminator-value": "car",
+            "x-ms-discriminator-value": "car"
         },
         "CarType": {
             "type": "string",

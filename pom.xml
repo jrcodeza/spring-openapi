@@ -33,6 +33,7 @@
     <modules>
         <module>annotations</module>
         <module>schema-generator</module>
+		<module>schema-v2-generator</module>
         <module>client-generator-plugin</module>
         <module>client-generator</module>
         <module>schema-generator-plugin</module>
@@ -40,7 +41,7 @@
 
     <properties>
         <maven-plugin-api.version>3.3.9</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.5.0</maven-plugin-annotations.version>
+        <maven-plugin-annotations.version>3.5.1</maven-plugin-annotations.version>
         <swagger-api.version>2.0.8</swagger-api.version>
         <classgraph.version>4.8.43</classgraph.version>
         <jackson-databind.version>2.9.10.1</jackson-databind.version>
@@ -54,6 +55,9 @@
         <spring-core.version>5.1.9.RELEASE</spring-core.version>
         <javapoet.version>1.11.1</javapoet.version>
         <commons-collections4.version>4.4</commons-collections4.version>
+		<swagger-v2-api.version>1.6.0</swagger-v2-api.version>
+		<commons-lang3.version>3.9</commons-lang3.version>
+        <json-path.version>2.4.0</json-path.version>
     </properties>
 
     <dependencyManagement>
@@ -124,17 +128,28 @@
                 <version>${swagger-api.version}</version>
             </dependency>
 
+			<dependency>
+				<groupId>io.swagger</groupId>
+				<artifactId>swagger-models</artifactId>
+				<version>${swagger-v2-api.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.swagger</groupId>
+				<artifactId>swagger-annotations</artifactId>
+				<version>${swagger-v2-api.version}</version>
+			</dependency>
+
             <dependency>
                 <groupId>com.squareup</groupId>
                 <artifactId>javapoet</artifactId>
                 <version>${javapoet.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson-databind.version}</version>
-            </dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson-databind.version}</version>
+			</dependency>
 
             <dependency>
                 <groupId>javax.validation</groupId>
@@ -164,7 +179,19 @@
                 <version>${log4j-api.version}</version>
             </dependency>
 
-            <dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>${commons-lang3.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.jayway.jsonpath</groupId>
+				<artifactId>json-path</artifactId>
+				<version>${json-path.version}</version>
+			</dependency>
+
+			<dependency>
                 <groupId>org.skyscreamer</groupId>
                 <artifactId>jsonassert</artifactId>
                 <version>${jsonassert.version}</version>

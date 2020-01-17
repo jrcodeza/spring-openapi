@@ -36,7 +36,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 
 	public Model transformSimpleSchema(Class<?> clazz, GenerationContext generationContext) {
 		if (clazz.isEnum()) {
-			return createEnumSchema(clazz.getEnumConstants());
+			return createEnumModel(clazz.getEnumConstants());
 		}
 
 		ModelImpl schema = new ModelImpl();
@@ -99,9 +99,9 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 
 		Optional<Property> optionalProperty;
 		if (typeSignature.isPrimitive()) {
-			optionalProperty = createBaseTypeSchema(field, annotations);
+			optionalProperty = createBaseTypeProperty(field, annotations);
 		} else if (typeSignature.isArray()) {
-			optionalProperty = createArrayTypeSchema(generationContext, typeSignature, annotations);
+			optionalProperty = createArrayTypeProperty(generationContext, typeSignature, annotations);
 		} else if (typeSignature.isAssignableFrom(List.class)) {
 			if (field.getGenericType() instanceof ParameterizedType) {
 				Class<?> listGenericParameter = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
@@ -110,25 +110,25 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 				optionalProperty = Optional.empty();
 			}
 		} else {
-			optionalProperty = createClassRefSchema(generationContext, typeSignature, annotations);
+			optionalProperty = createClassRefProperty(generationContext, typeSignature, annotations);
 		}
 		optionalProperty.ifPresent(property -> property.setRequired(isRequired(annotations)));
 		return optionalProperty;
 	}
 
-	private Optional<Property> createClassRefSchema(GenerationContext generationContext, Class<?> typeClass, Annotation[] annotations) {
-		Property schema = parseClassRefTypeSignature(typeClass, annotations, generationContext);
+	private Optional<Property> createClassRefProperty(GenerationContext generationContext, Class<?> typeClass, Annotation[] annotations) {
+		Property schema = createRefTypeProperty(typeClass, annotations, generationContext);
 		return Optional.ofNullable(schema);
 	}
 
-	private Optional<Property> createArrayTypeSchema(GenerationContext generationContext, Class<?> typeSignature, Annotation[] annotations) {
+	private Optional<Property> createArrayTypeProperty(GenerationContext generationContext, Class<?> typeSignature, Annotation[] annotations) {
 		Class<?> arrayComponentType = typeSignature.getComponentType();
 		Property schema = parseArraySignature(arrayComponentType, generationContext, annotations);
 		return Optional.ofNullable(schema);
 	}
 
-	private Optional<Property> createBaseTypeSchema(Field field, Annotation[] annotations) {
-		Property schema = parseBaseTypeSignature(field.getType(), annotations);
+	private Optional<Property> createBaseTypeProperty(Field field, Annotation[] annotations) {
+		Property schema = createBaseTypeProperty(field.getType(), annotations);
 		schema.setRequired(true);
 		return Optional.ofNullable(schema);
 	}
@@ -138,12 +138,12 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 	}
 
 	@Override
-	protected Property createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
+	protected Property createArrayProperty(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
 		return parseArraySignature(typeSignature, generationContext, annotations);
 	}
 
 	@Override
-	protected Property createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
+	protected Property createRefProperty(Class<?> typeSignature, GenerationContext generationContext) {
 		RefProperty schema = new RefProperty();
 		if (isInPackagesToBeScanned(typeSignature, generationContext)) {
 			if (generationContext.getInheritanceMap().containsKey(typeSignature.getName())) {

@@ -16,7 +16,6 @@ import com.github.jrcodeza.schema.v2.generator.interceptors.TestOperationParamet
 import com.github.jrcodeza.schema.v2.generator.interceptors.TestRequestBodyInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.TestSchemaFieldInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.TestSchemaInterceptor;
-import com.github.jrcodeza.schema.v2.generator.interceptors.examples.OpenApiExampleResolver;
 
 import static java.util.Collections.singletonList;
 
@@ -31,19 +30,8 @@ public class OpenAPIV2GeneratorTest {
 	@Test
 	public void generateStandardScenario() throws JsonProcessingException {
 		String openAPIJson = createTestGenerator().generateJson();
-		assertOpenApiResult(openAPIJson, "expected_standard_openapi.json");
+		assertOpenApiResult(openAPIJson, "expected_v2_openapi.json");
 	}
-//
-//	@Test
-//	public void generateExampleScenario() {
-//		Swagger openAPI = createTestGenerator().generate(
-//				OpenApiGeneratorConfigBuilder.defaultConfig()
-//											 .withGenerateExamples(true)
-//											 .withOpenApiExampleResolver(createExampleResolver())
-//											 .build()
-//		);
-//		assertOpenApiResult(openAPI, "expected_example_openapi.json");
-//	}
 
 	private void assertOpenApiResult(String openAPI, String pathToExpectedFile) {
 		try {
@@ -51,10 +39,6 @@ public class OpenAPIV2GeneratorTest {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-	}
-
-	private OpenApiExampleResolver createExampleResolver() {
-		return exampleKey -> "TestExampleResolvedWithKey=" + exampleKey;
 	}
 
 	private OpenAPIV2Generator createTestGenerator() {

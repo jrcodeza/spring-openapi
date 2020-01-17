@@ -2,10 +2,11 @@ package com.github.jrcodeza.schema.v2.generator;
 
 import io.swagger.models.ModelImpl;
 import io.swagger.models.parameters.AbstractSerializableParameter;
-import io.swagger.models.parameters.QueryParameter;
 import io.swagger.models.properties.AbstractNumericProperty;
 import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.BooleanProperty;
+import io.swagger.models.properties.DateProperty;
+import io.swagger.models.properties.DateTimeProperty;
 import io.swagger.models.properties.DecimalProperty;
 import io.swagger.models.properties.DoubleProperty;
 import io.swagger.models.properties.FloatProperty;
@@ -47,105 +48,99 @@ public abstract class OpenApiTransformer {
 
 	private static Logger logger = LoggerFactory.getLogger(OpenApiTransformer.class);
 
-	protected abstract Property createRefSchema(Class<?> typeSignature, GenerationContext generationContext);
+	protected abstract Property createRefProperty(Class<?> typeSignature, GenerationContext generationContext);
 
-	protected abstract Property createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations);
+	protected abstract Property createArrayProperty(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations);
 
 	@SuppressWarnings("squid:S1192") // better in-place defined for better readability
-	protected Property parseBaseTypeSignature(Class<?> type, Annotation[] annotations) {
+	protected Property createBaseTypeProperty(Class<?> type, Annotation[] annotations) {
 		if (byte.class.equals(type) || short.class.equals(type) || int.class.equals(type)) {
-			return createNumberSchema(new IntegerProperty(), "integer", "int32", annotations);
+			return createNumberSchema(new IntegerProperty(), annotations);
 		} else if (long.class.equals(type)) {
-			return createNumberSchema(new LongProperty(), "integer", "int64", annotations);
+			return createNumberSchema(new LongProperty(), annotations);
 		} else if (float.class.equals(type)) {
-			return createNumberSchema(new FloatProperty(), "number", "float", annotations);
+			return createNumberSchema(new FloatProperty(), annotations);
 		} else if (double.class.equals(type)) {
-			return createNumberSchema(new DoubleProperty(), "number", "double", annotations);
+			return createNumberSchema(new DoubleProperty(), annotations);
 		} else if (char.class.equals(type)) {
-			return createStringSchema(null, annotations);
+			return createStringProperty(null, annotations);
 		} else if (boolean.class.equals(type)) {
-			return createBooleanSchema();
+			return new BooleanProperty();
 		}
 		logger.info("Ignoring unsupported type=[{}]", type.getSimpleName());
 		return null;
 	}
 
-	protected void parseBaseTypeParameter(QueryParameter oasParameter, Class<?> type, Annotation[] annotations) {
+	protected void setParameterDetails(AbstractSerializableParameter<?> oasParameter, Class<?> type, Annotation[] annotations) {
 		if (byte.class.equals(type) || short.class.equals(type) || int.class.equals(type) || Byte.class.equals(type) ||
 			Short.class.equals(type) || Integer.class.equals(type)) {
-			oasParameter.setType("integer");
-			oasParameter.setFormat("int32");
+			oasParameter.setProperty(new IntegerProperty());
 		} else if (long.class.equals(type) || Long.class.equals(type) || BigInteger.class.equals(type)) {
-			oasParameter.setType("integer");
-			oasParameter.setFormat("int64");
+			oasParameter.setProperty(new LongProperty());
 		} else if (float.class.equals(type) || Float.class.equals(type)) {
-			oasParameter.setType("number");
-			oasParameter.setFormat("float");
+			oasParameter.setProperty(new FloatProperty());
 		} else if (double.class.equals(type) || Double.class.equals(type) || BigDecimal.class.equals(type)) {
-			oasParameter.setType("number");
-			oasParameter.setFormat("double");
+			oasParameter.setProperty(new DoubleProperty());
 		} else if (char.class.equals(type) || Character.class.equals(type) || String.class.equals(type)) {
-			oasParameter.setType("string");
+			oasParameter.setProperty(new StringProperty());
 		} else if (boolean.class.equals(type) || Boolean.class.equals(type)) {
-			oasParameter.setType("boolean");
+			oasParameter.setProperty(new BooleanProperty());
 		} else if (List.class.equals(type)) {
-			oasParameter.setProperty(createListSchema(type, null, annotations));
+			oasParameter.setProperty(createArrayProperty(type, null, annotations));
 		} else if (LocalDate.class.equals(type) || Date.class.equals(type)) {
-			oasParameter.setType("string");
-			oasParameter.setFormat("date");
+			oasParameter.setProperty(new DateProperty());
 		} else if (LocalDateTime.class.equals(type) || LocalTime.class.equals(type)) {
-			oasParameter.setType("string");
-			oasParameter.setFormat("date-time");
+			oasParameter.setProperty(new DateTimeProperty());
 		}  else if (type.isEnum()) {
 			oasParameter.setType("string");
 			oasParameter.setEnumValue(asList(type.getEnumConstants()));
 		} else {
-			oasParameter.setProperty(createRefSchema(type, null));
+			oasParameter.setProperty(createRefProperty(type, null));
 		}
-		asList(annotations).forEach(annotation -> applyAnnotationOnParameter(oasParameter, annotation));
+		asList(annotations).forEach(annotation -> applyAnnotationDetailsOnParameter(oasParameter, annotation));
 	}
 
 	@SuppressWarnings("squid:S3776") // no other solution
-	protected Property parseClassRefTypeSignature(Class<?> typeClass, Annotation[] annotations, GenerationContext generationContext) {
+	protected Property createRefTypeProperty(Class<?> typeClass, Annotation[] annotations, GenerationContext generationContext) {
 		if (Byte.class.equals(typeClass) || Short.class.equals(typeClass) || Integer.class.equals(typeClass)) {
-			return createNumberSchema(new IntegerProperty(), "integer", "int32", annotations);
+			return createNumberSchema(new IntegerProperty(), annotations);
 		} else if (Long.class.equals(typeClass) || BigInteger.class.equals(typeClass)) {
-			return createNumberSchema(new LongProperty(), "integer", "int64", annotations);
+			return createNumberSchema(new LongProperty(), annotations);
 		} else if (Float.class.equals(typeClass)) {
-			return createNumberSchema(new FloatProperty(), "number", "float", annotations);
+			return createNumberSchema(new FloatProperty(), annotations);
 		} else if (Double.class.equals(typeClass) || BigDecimal.class.equals(typeClass)) {
-			return createNumberSchema(new DoubleProperty(), "number", "double", annotations);
+			return createNumberSchema(new DoubleProperty(), annotations);
 		} else if (Character.class.equals(typeClass) || String.class.equals(typeClass)) {
-			return createStringSchema(null, annotations);
+			return createStringProperty(null, annotations);
 		} else if (Boolean.class.equals(typeClass)) {
-			return createBooleanSchema();
+			return new BooleanProperty();
 		} else if (List.class.equals(typeClass)) {
-			return createListSchema(typeClass, generationContext, annotations);
+			return createArrayProperty(typeClass, generationContext, annotations);
 		} else if (LocalDate.class.equals(typeClass) || Date.class.equals(typeClass)) {
-			return createStringSchema("date", annotations);
+			return createStringProperty("date", annotations);
 		} else if (LocalDateTime.class.equals(typeClass) || LocalTime.class.equals(typeClass)) {
-			return createStringSchema("date-time", annotations);
+			return createStringProperty("date-time", annotations);
 		}
-		return createRefSchema(typeClass, generationContext);
+		return createRefProperty(typeClass, generationContext);
 	}
 
 	protected Property parseArraySignature(Class<?> elementTypeSignature, GenerationContext generationContext, Annotation[] annotations) {
 		ArrayProperty arraySchema = new ArrayProperty();
 		if (elementTypeSignature == null) {
-			arraySchema.setItems(createObjectSchema());
+			arraySchema.setItems(new ObjectProperty());
 			return arraySchema;
 		}
-		Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
+		Stream.of(annotations).forEach(annotation -> applyArrayAnnotationDetails(arraySchema, annotation));
 		if (elementTypeSignature.isPrimitive()) {
 			// primitive type like int
-			Property property = mapBaseType(elementTypeSignature);
+			Property property = createProperty(elementTypeSignature);
 			if (property == null) {
 				throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getSimpleName()));
 			}
 			arraySchema.setItems(property);
 			return arraySchema;
 		} else if (isInPackagesToBeScanned(elementTypeSignature, generationContext) || elementTypeSignature.getPackage().getName().startsWith("java.lang")) {
-			Property property = mapBaseType(elementTypeSignature);
+			Property property = createProperty(elementTypeSignature);
 			// basic types like Integer or String
 			if (property != null) {
 				arraySchema.setItems(property);
@@ -167,50 +162,33 @@ public abstract class OpenApiTransformer {
 		}
 
 		ObjectProperty itemSchema = new ObjectProperty();
-		itemSchema.setType("object");
 		arraySchema.setItems(itemSchema);
 		return arraySchema;
 	}
 
-	private Property createObjectSchema() {
-		ObjectProperty schema = new ObjectProperty();
-		schema.setType("object");
-		return schema;
-	}
-
 	@SuppressWarnings("squid:S1192") // better in-place defined for better readability
-	protected Property createBooleanSchema() {
-		BooleanProperty schema = new BooleanProperty();
-		schema.setType("boolean");
-		return schema;
-	}
-
-	@SuppressWarnings("squid:S1192") // better in-place defined for better readability
-	protected Property createStringSchema(String format, Annotation[] annotations) {
+	protected Property createStringProperty(String format, Annotation[] annotations) {
 		StringProperty schema = new StringProperty();
-		schema.setType("string");
 		if (StringUtils.isNotBlank(format)) {
 			schema.setFormat(format);
 		}
-		asList(annotations).forEach(annotation -> applyStringAnnotations(schema, annotation));
+		asList(annotations).forEach(annotation -> applyStringAnnotationDetails(schema, annotation));
 		return schema;
 	}
 
-	protected <T> ModelImpl createEnumSchema(T[] enumConstants) {
+	protected <T> ModelImpl createEnumModel(T[] enumConstants) {
 		ModelImpl schema = new ModelImpl();
 		schema.setType("string");
 		schema.setEnum(Stream.of(enumConstants).map(Object::toString).collect(toList()));
 		return schema;
 	}
 
-	protected Property createNumberSchema(AbstractNumericProperty property, String type, String format, Annotation[] annotations) {
-		property.setType(type);
-		property.setFormat(format);
-		asList(annotations).forEach(annotation -> applyNumberAnnotation(property, annotation));
+	protected Property createNumberSchema(AbstractNumericProperty property, Annotation[] annotations) {
+		asList(annotations).forEach(annotation -> applyNumberAnnotationDetails(property, annotation));
 		return property;
 	}
 
-	protected void applyStringAnnotations(StringProperty schema, Annotation annotation) {
+	protected void applyStringAnnotationDetails(StringProperty schema, Annotation annotation) {
 		if (annotation instanceof Pattern) {
 			schema.pattern(((Pattern) annotation).regexp());
 		} else if (annotation instanceof Size) {
@@ -221,7 +199,7 @@ public abstract class OpenApiTransformer {
 		}
 	}
 
-	protected void applyNumberAnnotation(AbstractNumericProperty schema, Annotation annotation) {
+	protected void applyNumberAnnotationDetails(AbstractNumericProperty schema, Annotation annotation) {
 		if (annotation instanceof DecimalMin) {
 			schema.setMinimum(new BigDecimal(((DecimalMin) annotation).value()));
 		} else if (annotation instanceof DecimalMax) {
@@ -235,7 +213,7 @@ public abstract class OpenApiTransformer {
 		}
 	}
 
-	protected void applyAnnotationOnParameter(AbstractSerializableParameter schema, Annotation annotation) {
+	protected void applyAnnotationDetailsOnParameter(AbstractSerializableParameter schema, Annotation annotation) {
 		if (annotation instanceof DecimalMin) {
 			schema.setMinimum(new BigDecimal(((DecimalMin) annotation).value()));
 		} else if (annotation instanceof DecimalMax) {
@@ -255,7 +233,7 @@ public abstract class OpenApiTransformer {
 		}
 	}
 
-	protected void applyArrayAnnotations(ArrayProperty schema, Annotation annotation) {
+	protected void applyArrayAnnotationDetails(ArrayProperty schema, Annotation annotation) {
 		if (annotation instanceof Size) {
 			schema.setMinItems(((Size) annotation).min());
 			schema.setMaxItems(((Size) annotation).max());
@@ -264,25 +242,17 @@ public abstract class OpenApiTransformer {
 		}
 	}
 
-	protected Property mapBaseType(Class<?> elementTypeSignature) {
+	protected Property createProperty(Class<?> elementTypeSignature) {
 		if (byte.class.equals(elementTypeSignature) || short.class.equals(elementTypeSignature) || int.class.equals(elementTypeSignature)
 			|| long.class.equals(elementTypeSignature) || Byte.class.equals(elementTypeSignature) || Short.class.equals(elementTypeSignature)
 			|| Integer.class.equals(elementTypeSignature) || Long.class.equals(elementTypeSignature) || BigInteger.class.equals(elementTypeSignature)) {
-			IntegerProperty property = new IntegerProperty();
-			property.setType("integer");
-			return property;
+			return new IntegerProperty();
 		} else if (float.class.equals(elementTypeSignature) || Float.class.equals(elementTypeSignature)) {
-			FloatProperty property = new FloatProperty();
-			property.setType("float");
-			return property;
+			return new FloatProperty();
 		} else if (double.class.equals(elementTypeSignature) || Double.class.equals(elementTypeSignature)) {
-			DoubleProperty property = new DoubleProperty();
-			property.setType("double");
-			return property;
+			return new DoubleProperty();
 		} else if (BigDecimal.class.equals(elementTypeSignature)) {
-			DecimalProperty property = new DecimalProperty();
-			property.setType("decimal");
-			return property;
+			return new DecimalProperty("decimal");
 
 		} else if (List.class.equals(elementTypeSignature)) {
 			throw new IllegalArgumentException("Nested List types are not supported"
@@ -292,18 +262,13 @@ public abstract class OpenApiTransformer {
 			if (char.class.equals(elementTypeSignature) || Character.class.equals(elementTypeSignature) || String.class.equals(elementTypeSignature)
 				|| LocalDate.class.equals(elementTypeSignature) || Date.class.equals(elementTypeSignature)
 				|| LocalDateTime.class.equals(elementTypeSignature) || LocalTime.class.equals(elementTypeSignature)) {
-				StringProperty property = new StringProperty();
-				property.setType("string");
-				return property;
+				return new StringProperty();
 			} else if (elementTypeSignature.isEnum()) {
 				StringProperty property = new StringProperty();
-				property.setType("string");
 				property.setEnum(Arrays.stream(elementTypeSignature.getEnumConstants()).map(Object::toString).collect(toList()));
 				return property;
 			} else if (boolean.class.equals(elementTypeSignature) || Boolean.class.equals(elementTypeSignature)) {
-				BooleanProperty property = new BooleanProperty();
-				property.setType("boolean");
-				return property;
+				return new BooleanProperty();
 			}
 		}
 		return null;

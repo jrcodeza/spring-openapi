@@ -4,7 +4,6 @@ import io.swagger.models.Info;
 import io.swagger.models.Model;
 import io.swagger.models.Path;
 import io.swagger.models.Swagger;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -29,8 +28,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jrcodeza.OpenApiIgnore;
-import com.github.jrcodeza.schema.v2.generator.config.OpenApiGeneratorConfig;
-import com.github.jrcodeza.schema.v2.generator.config.builder.OpenApiGeneratorConfigBuilder;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.RequestBodyInterceptor;
@@ -94,12 +91,8 @@ public class OpenAPIV2Generator {
 		this.requestBodyInterceptors = requestBodyInterceptors;
 	}
 
-	public Swagger generate() {
-		return generate(OpenApiGeneratorConfigBuilder.defaultConfig().build());
-	}
-
 	public String generateJson() throws JsonProcessingException {
-		Swagger openAPI = generate(OpenApiGeneratorConfigBuilder.defaultConfig().build());
+		Swagger openAPI = generate();
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		DocumentContext doc = JsonPath.parse(objectMapper.writeValueAsString(openAPI));
@@ -108,26 +101,14 @@ public class OpenAPIV2Generator {
 		return doc.jsonString();
 	}
 
-	public Swagger generate(OpenApiGeneratorConfig openApiGeneratorConfig) {
-		logger.info("Starting OpenAPI generation");
-		//initializeExampleInterceptor(openApiGeneratorConfig);
+	public Swagger generate() {
+		logger.info("Starting OpenAPI v2 generation");
 		Swagger openAPI = new Swagger();
 		openAPI.setDefinitions(createDefinitions());
 		openAPI.setPaths(createPaths());
 		openAPI.setInfo(info);
-		logger.info("OpenAPI generation done!");
+		logger.info("OpenAPI v2 generation done!");
 		return openAPI;
-	}
-
-	private void initializeExampleInterceptor(OpenApiGeneratorConfig openApiGeneratorConfig) {
-		//		if (openApiGeneratorConfig.isGenerateExamples()) {
-		//			OperationParameterExampleInterceptor operationParameterExampleInterceptor =
-		//					new OperationParameterExampleInterceptor(openApiGeneratorConfig.getOpenApiExampleResolver());
-		//			addInterceptor(requestBodyInterceptors, operationParameterExampleInterceptor);
-		//			addInterceptor(schemaFieldInterceptors, operationParameterExampleInterceptor);
-		//			addInterceptor(operationParameterInterceptors, operationParameterExampleInterceptor);
-		//			addInterceptor(schemaInterceptors, operationParameterExampleInterceptor);
-		//		}
 	}
 
 	public void addSchemaInterceptor(SchemaInterceptor schemaInterceptor) {
@@ -152,12 +133,6 @@ public class OpenAPIV2Generator {
 
 	public void addGlobalHeader(String name, String description, boolean required) {
 		globalHeaders.add(new Header(name, description, required));
-	}
-
-	private <T, U extends T> void addInterceptor(List<T> interceptors, U interceptor) {
-		if (interceptors.stream().noneMatch(o -> StringUtils.equalsIgnoreCase(o.getClass().getName(), interceptor.getClass().getName()))) {
-			interceptors.add(interceptor);
-		}
 	}
 
 	private Map<String, Path> createPaths() {

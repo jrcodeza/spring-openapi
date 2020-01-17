@@ -3,7 +3,10 @@ package com.github.jrcodeza.schema.v2.generator;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.Operation;
 import io.swagger.models.Path;
+import io.swagger.models.parameters.AbstractSerializableParameter;
 import io.swagger.models.parameters.BodyParameter;
+import io.swagger.models.parameters.HeaderParameter;
+import io.swagger.models.parameters.PathParameter;
 import io.swagger.models.parameters.QueryParameter;
 import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.FileProperty;
@@ -40,6 +43,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,6 +67,7 @@ import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 
 public class OperationsTransformer extends OpenApiTransformer {
@@ -71,7 +76,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private static Logger logger = LoggerFactory.getLogger(OperationsTransformer.class);
 
 	private static final String DEFAULT_CONTENT_TYPE = "application/json";
-	private static final String DEFAULT_FILE_RETURN_CONTENT_TYPE = "application/octet-stream";
 	private static final String MULTIPART_FORM_DATA_CONTENT_TYPE = "multipart/form-data";
 	private static final LocalVariableTableParameterNameDiscoverer parameterNameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
 
@@ -132,29 +136,19 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 	private void mapRequestMapping(RequestMapping requestMapping, Method method, Map<String, Path> operationsMap, String controllerClassName,
 								   String baseControllerPath) {
-		Operation operation = new Operation();
-		operation.setOperationId(getOperationId(requestMapping.name(), method, getSpringMethod(requestMapping.method())));
-		operation.setSummary(StringUtils.isBlank(requestMapping.name()) ? requestMapping.name() : method.getName());
-		operation.setTags(singletonList(classNameToTag(controllerClassName)));
-		operation.setProduces(asList(requestMapping.produces()));
-		operation.setConsumes(asList(requestMapping.consumes()));
+		List<HttpMethod> httpMethods = Arrays.stream(requestMapping.method())
+											 .map(this::getSpringMethod)
+											 .collect(toList());
+		httpMethods.forEach(httpMethod -> {
+			Operation operation = mapOperation(requestMapping.name(), httpMethod, method, requestMapping.produces(),
+											   requestMapping.consumes(), controllerClassName);
 
-		operation.setParameters(transformParameters(method));
-		if (isHttpMethodWithRequestBody(requestMapping.method())) {
-			BodyParameter requestBody = createRequestBody(method, getFirstFromArray(requestMapping.consumes()));
-			if (requestBody != null) {
-				operation.getParameters().add(requestBody);
-			}
-		}
-		operation.setResponses(createApiResponses(method, getFirstFromArray(requestMapping.produces())));
-		applyAnnotationsForOperation(operation, method.getAnnotations());
+			String path = ObjectUtils.defaultIfNull(getFirstFromArray(requestMapping.value()), getFirstFromArray(requestMapping.path()));
+			updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap,
+								pathItem -> setContentBasedOnHttpMethod(pathItem, httpMethod, operation)
+			);
+		});
 
-		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
-
-		String path = ObjectUtils.defaultIfNull(getFirstFromArray(requestMapping.value()), getFirstFromArray(requestMapping.path()));
-		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap,
-							pathItem -> setContentBasedOnHttpMethod(pathItem, requestMapping.method(), operation)
-		);
 	}
 
 	private String prepareUrl(String... url) {
@@ -169,12 +163,11 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return preparedUrl.replaceAll("[^A-Za-z0-9-/{}]", "");
 	}
 
-	private void setContentBasedOnHttpMethod(Path pathItem, RequestMethod[] method, Operation operation) {
-		if (method == null || method.length == 0) {
+	private void setContentBasedOnHttpMethod(Path pathItem, HttpMethod method, Operation operation) {
+		if (method == null) {
 			throw new IllegalArgumentException("RequestMethod in RequestMapping must have at least one value");
 		}
-		RequestMethod requestMethod = method[0];
-		switch (requestMethod) {
+		switch (method) {
 			case GET:
 				pathItem.setGet(operation);
 				return;
@@ -198,8 +191,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 		}
 	}
 
-	private boolean isHttpMethodWithRequestBody(RequestMethod[] methods) {
-		return Stream.of(methods).anyMatch(requestMethod -> asList(RequestMethod.POST, RequestMethod.PUT, RequestMethod.PATCH).contains(requestMethod));
+	private boolean isHttpMethodWithRequestBody(HttpMethod method) {
+		return asList(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH).contains(method);
 	}
 
 	private String classNameToTag(String controllerClassName) {
@@ -208,37 +201,27 @@ public class OperationsTransformer extends OpenApiTransformer {
 					 .collect(Collectors.joining("-"));
 	}
 
-	private HttpMethod getSpringMethod(RequestMethod[] method) {
-		if (method == null || method.length == 0) {
+	private HttpMethod getSpringMethod(RequestMethod method) {
+		if (method == null) {
 			throw new IllegalArgumentException("HttpMethod must be specified on RequestMapping annotated method");
 		}
-		return HttpMethod.valueOf(method[0].name());
+		return HttpMethod.valueOf(method.name());
 	}
 
 	private void mapDelete(DeleteMapping deleteMapping, Method method, Map<String, Path> operationsMap, String controllerClassName,
 						   String baseControllerPath) {
-		Operation operation = new Operation();
-		operation.setOperationId(getOperationId(deleteMapping.name(), method, HttpMethod.DELETE));
-		operation.setSummary(StringUtils.isBlank(deleteMapping.name()) ? deleteMapping.name() : method.getName());
-		operation.setTags(singletonList(classNameToTag(controllerClassName)));
-		operation.setProduces(asList(deleteMapping.produces()));
-		operation.setConsumes(asList(deleteMapping.consumes()));
+		Operation operation = mapOperation(deleteMapping.name(), HttpMethod.DELETE, method, deleteMapping.produces(), deleteMapping.consumes(), controllerClassName);
 
-		operation.setParameters(transformParameters(method));
-		operation.setResponses(createApiResponses(method, getFirstFromArray(deleteMapping.produces())));
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(deleteMapping.value()), getFirstFromArray(deleteMapping.path()));
-
-		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setDelete(operation));
 	}
 
-	private Map<String, io.swagger.models.Response> createApiResponses(Method method, String produces) {
+	private Map<String, io.swagger.models.Response> createApiResponses(Method method) {
 		Responses apiResponsesAnnotation = method.getAnnotation(Responses.class);
 
 		if (apiResponsesAnnotation == null) {
 			Class<?> methodReturnType = method.getReturnType();
 			Property mediaType = createMediaType(methodReturnType, null, getGenericParams(method));
-
 			String responseStatusCode = resolveResponseStatus(method);
 			io.swagger.models.Response apiResponse = new io.swagger.models.Response();
 			apiResponse.setDescription(HttpStatus.valueOf(Integer.parseInt(responseStatusCode)).getReasonPhrase());
@@ -280,13 +263,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return apiResponses;
 	}
 
-	private String resolveDefaultContentType(Class<?> responseBody) {
-		if (isFileResponse(responseBody)) {
-			return DEFAULT_FILE_RETURN_CONTENT_TYPE;
-		}
-		return DEFAULT_CONTENT_TYPE;
-	}
-
 	private boolean isFileResponse(Class<?> responseBodyClass) {
 		return responseBodyClass.isAssignableFrom(MultipartFile.class);
 	}
@@ -323,8 +299,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 		Map<String, Property> responseHeaders = new HashMap<>();
 		for (com.github.jrcodeza.Header headerAnnotation : headers) {
 			StringProperty header = new StringProperty();
-			header.setType("string");
-
 			header.setDescription(headerAnnotation.description());
 			responseHeaders.put(headerAnnotation.name(), header);
 		}
@@ -344,86 +318,58 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private void mapGet(GetMapping getMapping, Method method, Map<String, Path> operationsMap, String controllerClassName, String baseControllerPath) {
-		Operation operation = new Operation();
-		operation.setOperationId(getOperationId(getMapping.name(), method, HttpMethod.GET));
-		operation.setSummary(StringUtils.isBlank(getMapping.name()) ? getMapping.name() : method.getName());
-		operation.setTags(singletonList(classNameToTag(controllerClassName)));
-		operation.setProduces(asList(getMapping.produces()));
-		operation.setConsumes(asList(getMapping.consumes()));
-
-		operation.setParameters(transformParameters(method));
-		operation.setResponses(createApiResponses(method, getFirstFromArray(getMapping.produces())));
-		applyAnnotationsForOperation(operation, method.getAnnotations());
+		Operation operation = mapOperation(getMapping.name(), HttpMethod.GET, method, getMapping.produces(), getMapping.consumes(), controllerClassName);
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(getMapping.value()), getFirstFromArray(getMapping.path()));
-
-		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setGet(operation));
 	}
 
 	private void mapPatch(PatchMapping patchMapping, Method method, Map<String, Path> operationsMap, String controllerClassName,
 						  String baseControllerPath) {
-		Operation operation = new Operation();
-		operation.setOperationId(getOperationId(patchMapping.name(), method, HttpMethod.PATCH));
-		operation.setSummary(StringUtils.isBlank(patchMapping.name()) ? patchMapping.name() : method.getName());
-		operation.setTags(singletonList(classNameToTag(controllerClassName)));
-		operation.setProduces(asList(patchMapping.produces()));
-		operation.setConsumes(asList(patchMapping.consumes()));
-
-		operation.setResponses(createApiResponses(method, getFirstFromArray(patchMapping.produces())));
-		operation.setParameters(transformParameters(method));
-		BodyParameter requestBody = createRequestBody(method, getFirstFromArray(patchMapping.consumes()));
-		if (requestBody != null) {
-			operation.getParameters().add(requestBody);
-		}
-		applyAnnotationsForOperation(operation, method.getAnnotations());
+		Operation operation = mapOperation(patchMapping.name(), HttpMethod.PATCH, method, patchMapping.produces(), patchMapping.consumes(), controllerClassName);
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(patchMapping.value()), getFirstFromArray(patchMapping.path()));
-
-		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPatch(operation));
 	}
 
 	private void mapPut(PutMapping putMapping, Method method, Map<String, Path> operationsMap, String controllerClassName, String baseControllerPath) {
-		Operation operation = new Operation();
-		operation.setOperationId(getOperationId(putMapping.name(), method, HttpMethod.PUT));
-		operation.setSummary(StringUtils.isBlank(putMapping.name()) ? putMapping.name() : method.getName());
-		operation.setTags(singletonList(classNameToTag(controllerClassName)));
-		operation.setProduces(asList(putMapping.produces()));
-		operation.setConsumes(asList(putMapping.consumes()));
-
-		operation.setResponses(createApiResponses(method, getFirstFromArray(putMapping.produces())));
-		operation.setParameters(transformParameters(method));
-		BodyParameter requestBody = createRequestBody(method, getFirstFromArray(putMapping.consumes()));
-		if (requestBody != null) {
-			operation.getParameters().add(requestBody);
-		}
-		applyAnnotationsForOperation(operation, method.getAnnotations());
+		Operation operation = mapOperation(putMapping.name(), HttpMethod.PUT, method, putMapping.produces(), putMapping.consumes(), controllerClassName);
 
 		String path = ObjectUtils.defaultIfNull(getFirstFromArray(putMapping.value()), getFirstFromArray(putMapping.path()));
-
-		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPut(operation));
 	}
 
-	private void mapPost(PostMapping postMapping, Method method, Map<String, Path> operationsMap, String controllerClassName, String baseControllerPath) {
+	private Operation mapOperation(String operationName, HttpMethod httpMethod, Method method, String[] produces, String[] consumes, String controllerClassName) {
 		Operation operation = new Operation();
-		operation.setOperationId(getOperationId(postMapping.name(), method, HttpMethod.POST));
-		operation.setSummary(StringUtils.isBlank(postMapping.name()) ? postMapping.name() : method.getName());
+		operation.setOperationId(getOperationId(operationName, method, httpMethod));
+		operation.setSummary(StringUtils.isBlank(operationName) ? operationName : method.getName());
 		operation.setTags(singletonList(classNameToTag(controllerClassName)));
-		operation.setProduces(asList(postMapping.produces()));
-		operation.setConsumes(asList(postMapping.consumes()));
 
-		operation.setResponses(createApiResponses(method, getFirstFromArray(postMapping.produces())));
+		operation.setResponses(createApiResponses(method));
 		operation.setParameters(transformParameters(method));
-		BodyParameter requestBody = createRequestBody(method, getFirstFromArray(postMapping.consumes()));
-		if (requestBody != null) {
-			operation.getParameters().add(requestBody);
+		if (isNotEmpty(consumes)) {
+			operation.setConsumes(asList(consumes));
 		}
-		applyAnnotationsForOperation(operation, method.getAnnotations());
-		String path = ObjectUtils.defaultIfNull(getFirstFromArray(postMapping.value()), getFirstFromArray(postMapping.path()));
+		if (isNotEmpty(produces)) {
+			operation.setProduces(asList(produces));
+		}
 
+		if (isHttpMethodWithRequestBody(httpMethod)) {
+			BodyParameter requestBody = createRequestBody(method, getFirstFromArray(consumes));
+			if (requestBody != null) {
+				operation.getParameters().add(requestBody);
+			}
+		}
+
+		applyAnnotationsForOperation(operation, method.getAnnotations());
 		operationInterceptors.forEach(interceptor -> interceptor.intercept(method, operation));
+		return operation;
+	}
+
+	private void mapPost(PostMapping postMapping, Method method, Map<String, Path> operationsMap, String controllerClassName, String baseControllerPath) {
+		Operation operation = mapOperation(postMapping.name(), HttpMethod.POST, method, postMapping.produces(), postMapping.consumes(), controllerClassName);
+
+		String path = ObjectUtils.defaultIfNull(getFirstFromArray(postMapping.value()), getFirstFromArray(postMapping.path()));
 		updateOperationsMap(prepareUrl(baseControllerPath, "/", path), operationsMap, pathItem -> pathItem.setPost(operation));
 	}
 
@@ -473,7 +419,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (!globalHeaders.isEmpty()) {
 			List<io.swagger.models.parameters.Parameter> globalOasHeaders = globalHeaders.stream()
 																						 .map(this::createOasHeader)
-																						 .collect(Collectors.toList());
+																						 .collect(toList());
 			result.addAll(globalOasHeaders);
 		}
 	}
@@ -494,21 +440,21 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private io.swagger.models.parameters.Parameter mapQueryParameter(Parameter parameter, String parameterName) {
-		io.swagger.models.parameters.QueryParameter oasParameter = new io.swagger.models.parameters.QueryParameter();
+		AbstractSerializableParameter<?> oasParameter;
 		if (parameter.getAnnotation(PathVariable.class) != null) {
 			PathVariable pathVariableAnnotation = parameter.getAnnotation(PathVariable.class);
+			oasParameter = new PathParameter();
 			oasParameter.setName(resolveNameFromAnnotation(pathVariableAnnotation.name(), pathVariableAnnotation.value(), parameterName));
-			oasParameter.setIn("path");
 			oasParameter.setRequired(true);
 		} else if (parameter.getAnnotation(RequestParam.class) != null && !parameter.getType().isAssignableFrom(MultipartFile.class)) {
 			RequestParam requestParamAnnotation = parameter.getAnnotation(RequestParam.class);
+			oasParameter = new QueryParameter();
 			oasParameter.setName(resolveNameFromAnnotation(requestParamAnnotation.name(), requestParamAnnotation.value(), parameterName));
-			oasParameter.setIn("query");
 			oasParameter.setRequired(requestParamAnnotation.required());
 		} else if (parameter.getAnnotation(RequestHeader.class) != null) {
 			RequestHeader requestHeaderAnnotation = parameter.getAnnotation(RequestHeader.class);
+			oasParameter = new HeaderParameter();
 			oasParameter.setName(resolveNameFromAnnotation(requestHeaderAnnotation.name(), requestHeaderAnnotation.value(), parameterName));
-			oasParameter.setIn("header");
 			oasParameter.setRequired(requestHeaderAnnotation.required());
 		} else {
 			return null;
@@ -579,7 +525,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 			} else {
 				Map<String, Property> properties = new HashMap<>();
 				properties.put(parameterName, fileSchema);
-				((ObjectProperty) rootMediaSchema).setType("object");
 				((ObjectProperty) rootMediaSchema).setProperties(properties);
 			}
 		} else if (isList(requestBodyParameter, genericParams)) {
@@ -616,14 +561,13 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return classToCheck.isAssignableFrom(List.class);
 	}
 
-	private void fillParameterInfo(QueryParameter oasParameter, Parameter parameter, String parameterName) {
+	private void fillParameterInfo(AbstractSerializableParameter<?> oasParameter, Parameter parameter, String parameterName) {
 		Class<?> clazz = parameter.getType();
 		Annotation[] annotations = parameter.getAnnotations();
 
 		if (clazz.isPrimitive()) {
-			parseBaseTypeParameter(oasParameter, clazz, annotations);
+			setParameterDetails(oasParameter, clazz, annotations);
 		} else if (clazz.isArray()) {
-			oasParameter.setType("array");
 			oasParameter.setProperty(parseArraySignatureForParameter(clazz.getComponentType(), null, annotations));
 		} else if (clazz.isAssignableFrom(List.class)) {
 			if (!(parameter.getParameterizedType() instanceof ParameterizedType)) {
@@ -633,23 +577,23 @@ public class OperationsTransformer extends OpenApiTransformer {
 			oasParameter.setProperty(parseArraySignature(listGenericParameter, null, annotations));
 
 		} else {
-			parseBaseTypeParameter(oasParameter, clazz, annotations);
+			setParameterDetails(oasParameter, clazz, annotations);
 		}
 	}
 
 	private Property parseArraySignatureForParameter(Class<?> elementTypeSignature, GenerationContext generationContext, Annotation[] annotations) {
 		ArrayProperty arraySchema = new ArrayProperty();
-		Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
+		Stream.of(annotations).forEach(annotation -> applyArrayAnnotationDetails(arraySchema, annotation));
 		if (elementTypeSignature.isPrimitive()) {
 			// primitive type like int
-			Property property = mapBaseType(elementTypeSignature);
+			Property property = createProperty(elementTypeSignature);
 			if (property == null) {
 				throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getSimpleName()));
 			}
 			arraySchema.setItems(property);
 			return arraySchema;
 		} else if (isInPackagesToBeScanned(elementTypeSignature, generationContext) || elementTypeSignature.getPackage().getName().startsWith("java.lang")) {
-			Property property = mapBaseType(elementTypeSignature);
+			Property property = createProperty(elementTypeSignature);
 			// basic types like Integer or String
 			if (property != null) {
 				arraySchema.setItems(property);
@@ -657,9 +601,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			}
 		}
 
-		ObjectProperty itemSchema = new ObjectProperty();
-		itemSchema.setType("string");
-		arraySchema.setItems(itemSchema);
+		arraySchema.setItems(new StringProperty());
 		return arraySchema;
 	}
 
@@ -725,14 +667,14 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	@Override
-	protected RefProperty createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
+	protected RefProperty createRefProperty(Class<?> typeSignature, GenerationContext generationContext) {
 		RefProperty composedSchema = new RefProperty();
 		composedSchema.set$ref(CommonConstants.COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
 		return composedSchema;
 	}
 
 	@Override
-	protected Property createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
+	protected Property createArrayProperty(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
 		return parseArraySignature(typeSignature, null, annotations);
 	}
 

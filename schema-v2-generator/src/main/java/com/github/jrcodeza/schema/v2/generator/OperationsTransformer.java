@@ -1,42 +1,5 @@
 package com.github.jrcodeza.schema.v2.generator;
 
-import io.swagger.models.ModelImpl;
-import io.swagger.models.Operation;
-import io.swagger.models.Path;
-import io.swagger.models.parameters.AbstractSerializableParameter;
-import io.swagger.models.parameters.BodyParameter;
-import io.swagger.models.parameters.HeaderParameter;
-import io.swagger.models.parameters.PathParameter;
-import io.swagger.models.parameters.QueryParameter;
-import io.swagger.models.properties.ArrayProperty;
-import io.swagger.models.properties.FileProperty;
-import io.swagger.models.properties.ObjectProperty;
-import io.swagger.models.properties.Property;
-import io.swagger.models.properties.RefProperty;
-import io.swagger.models.properties.StringProperty;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -63,6 +26,44 @@ import com.github.jrcodeza.schema.v2.generator.interceptors.RequestBodyIntercept
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
+
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MultipartFile;
+
+import io.swagger.models.ModelImpl;
+import io.swagger.models.Operation;
+import io.swagger.models.Path;
+import io.swagger.models.parameters.AbstractSerializableParameter;
+import io.swagger.models.parameters.BodyParameter;
+import io.swagger.models.parameters.HeaderParameter;
+import io.swagger.models.parameters.PathParameter;
+import io.swagger.models.parameters.QueryParameter;
+import io.swagger.models.properties.ArrayProperty;
+import io.swagger.models.properties.FileProperty;
+import io.swagger.models.properties.ObjectProperty;
+import io.swagger.models.properties.Property;
+import io.swagger.models.properties.RefProperty;
+import io.swagger.models.properties.StringProperty;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -242,8 +243,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 			apiResponse.setHeaders(createHeaderResponse(responseAnnotation.headers()));
 
 			if (!StringUtils.containsIgnoreCase(responseAnnotation.responseBody().getSimpleName(), "void")) {
-
-
 				Property mediaType;
 				if (isFileResponse(responseAnnotation.responseBody())) {
 					mediaType = new FileProperty();
@@ -568,20 +567,19 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (clazz.isPrimitive()) {
 			setParameterDetails(oasParameter, clazz, annotations);
 		} else if (clazz.isArray()) {
-			oasParameter.setProperty(parseArraySignatureForParameter(clazz.getComponentType(), null, annotations));
+			oasParameter.setProperty(parseArraySignatureForParameter(clazz.getComponentType(), annotations));
 		} else if (clazz.isAssignableFrom(List.class)) {
 			if (!(parameter.getParameterizedType() instanceof ParameterizedType)) {
 				throw new IllegalArgumentException(String.format("List [%s] not being parametrized type.", parameterName));
 			}
 			Class<?> listGenericParameter = (Class<?>) ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
 			oasParameter.setProperty(parseArraySignature(listGenericParameter, null, annotations));
-
 		} else {
 			setParameterDetails(oasParameter, clazz, annotations);
 		}
 	}
 
-	private Property parseArraySignatureForParameter(Class<?> elementTypeSignature, GenerationContext generationContext, Annotation[] annotations) {
+	private Property parseArraySignatureForParameter(Class<?> elementTypeSignature, Annotation[] annotations) {
 		ArrayProperty arraySchema = new ArrayProperty();
 		Stream.of(annotations).forEach(annotation -> applyArrayAnnotationDetails(arraySchema, annotation));
 		if (elementTypeSignature.isPrimitive()) {

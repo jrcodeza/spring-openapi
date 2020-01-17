@@ -1,15 +1,5 @@
 package com.github.jrcodeza.schema.v2.generator;
 
-import io.swagger.models.ComposedModel;
-import io.swagger.models.Model;
-import io.swagger.models.ModelImpl;
-import io.swagger.models.RefModel;
-import io.swagger.models.properties.Property;
-import io.swagger.models.properties.RefProperty;
-import io.swagger.models.properties.UntypedProperty;
-import org.springframework.util.ReflectionUtils;
-
-import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -20,13 +10,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.validation.constraints.NotNull;
+
 import com.github.jrcodeza.schema.v2.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.ReflectionUtils;
+
+import io.swagger.models.ComposedModel;
+import io.swagger.models.Model;
+import io.swagger.models.ModelImpl;
+import io.swagger.models.RefModel;
+import io.swagger.models.properties.Property;
+import io.swagger.models.properties.RefProperty;
+import io.swagger.models.properties.UntypedProperty;
+
 public class ComponentSchemaTransformer extends OpenApiTransformer {
+
+	private static Logger logger = LoggerFactory.getLogger(ComponentSchemaTransformer.class);
 
 	private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
 
@@ -70,8 +76,9 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 			composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
 			InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(superclass.getName());
 			if (inheritanceInfo != null) {
-				composedSchema.setVendorExtension("x-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
-				composedSchema.setVendorExtension("x-ms-discriminator-value", inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName()));
+				String discriminatorName = inheritanceInfo.getDiscriminatorClassMap().get(clazz.getName());
+				composedSchema.setVendorExtension("x-discriminator-value", discriminatorName);
+				composedSchema.setVendorExtension("x-ms-discriminator-value", discriminatorName);
 			}
 			return composedSchema;
 		}
@@ -153,7 +160,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 					Class<?> clazz = Class.forName(className);
 					schema.set$ref(CommonConstants.COMPONENT_REF_PREFIX + clazz.getSuperclass().getSimpleName());
 				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
+					logger.info("Exception occurred", e);
 				}
 				return schema;
 			}

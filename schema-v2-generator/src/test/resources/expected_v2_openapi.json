@@ -1065,7 +1065,8 @@
                     "format": "double",
                     "description": ". Test schemaField interceptor",
                     "minimum": 1.05,
-                    "maximum": 2.5
+                    "maximum": 2.5,
+                    "x-type": "System.BigDecimal"
                 },
                 "stringSize": {
                     "type": "string",
@@ -1101,7 +1102,8 @@
                         "price": {
                             "type": "number",
                             "format": "double",
-                            "description": ". Test schemaField interceptor"
+                            "description": ". Test schemaField interceptor",
+                            "x-type": "System.BigDecimal"
                         }
                     }
                 }

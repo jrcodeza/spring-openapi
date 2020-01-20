@@ -7,7 +7,6 @@ import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.BooleanProperty;
 import io.swagger.models.properties.DateProperty;
 import io.swagger.models.properties.DateTimeProperty;
-import io.swagger.models.properties.DecimalProperty;
 import io.swagger.models.properties.DoubleProperty;
 import io.swagger.models.properties.FloatProperty;
 import io.swagger.models.properties.IntegerProperty;
@@ -59,9 +58,9 @@ public abstract class OpenApiTransformer {
 		} else if (long.class.equals(type)) {
 			return createNumberSchema(new LongProperty(), annotations);
 		} else if (float.class.equals(type)) {
-			return createNumberSchema(new FloatProperty(), annotations);
+			return createNumberSchema(new FloatProperty().vendorExtension("x-type", "System.BigDecimal"), annotations);
 		} else if (double.class.equals(type)) {
-			return createNumberSchema(new DoubleProperty(), annotations);
+			return createNumberSchema(new DoubleProperty().vendorExtension("x-type", "System.BigDecimal"), annotations);
 		} else if (char.class.equals(type)) {
 			return createStringProperty(null, annotations);
 		} else if (boolean.class.equals(type)) {
@@ -78,9 +77,9 @@ public abstract class OpenApiTransformer {
 		} else if (long.class.equals(type) || Long.class.equals(type) || BigInteger.class.equals(type)) {
 			oasParameter.setProperty(new LongProperty());
 		} else if (float.class.equals(type) || Float.class.equals(type)) {
-			oasParameter.setProperty(new FloatProperty());
+			oasParameter.setProperty(new FloatProperty().vendorExtension("x-type", "System.BigDecimal"));
 		} else if (double.class.equals(type) || Double.class.equals(type) || BigDecimal.class.equals(type)) {
-			oasParameter.setProperty(new DoubleProperty());
+			oasParameter.setProperty(new DoubleProperty().vendorExtension("x-type", "System.BigDecimal"));
 		} else if (char.class.equals(type) || Character.class.equals(type) || String.class.equals(type)) {
 			oasParameter.setProperty(new StringProperty());
 		} else if (boolean.class.equals(type) || Boolean.class.equals(type)) {
@@ -107,9 +106,9 @@ public abstract class OpenApiTransformer {
 		} else if (Long.class.equals(typeClass) || BigInteger.class.equals(typeClass)) {
 			return createNumberSchema(new LongProperty(), annotations);
 		} else if (Float.class.equals(typeClass)) {
-			return createNumberSchema(new FloatProperty(), annotations);
+			return createNumberSchema(new FloatProperty().vendorExtension("x-type", "System.BigDecimal"), annotations);
 		} else if (Double.class.equals(typeClass) || BigDecimal.class.equals(typeClass)) {
-			return createNumberSchema(new DoubleProperty(), annotations);
+			return createNumberSchema(new DoubleProperty().vendorExtension("x-type", "System.BigDecimal"), annotations);
 		} else if (Character.class.equals(typeClass) || String.class.equals(typeClass)) {
 			return createStringProperty(null, annotations);
 		} else if (Boolean.class.equals(typeClass)) {
@@ -248,12 +247,9 @@ public abstract class OpenApiTransformer {
 			|| Integer.class.equals(elementTypeSignature) || Long.class.equals(elementTypeSignature) || BigInteger.class.equals(elementTypeSignature)) {
 			return new IntegerProperty();
 		} else if (float.class.equals(elementTypeSignature) || Float.class.equals(elementTypeSignature)) {
-			return new FloatProperty();
-		} else if (double.class.equals(elementTypeSignature) || Double.class.equals(elementTypeSignature)) {
-			return new DoubleProperty();
-		} else if (BigDecimal.class.equals(elementTypeSignature)) {
-			return new DecimalProperty("decimal");
-
+			return new FloatProperty().vendorExtension("x-type", "System.BigDecimal");
+		} else if (double.class.equals(elementTypeSignature) || Double.class.equals(elementTypeSignature) || BigDecimal.class.equals(elementTypeSignature)) {
+			return new DoubleProperty().vendorExtension("x-type", "System.BigDecimal");
 		} else if (List.class.equals(elementTypeSignature)) {
 			throw new IllegalArgumentException("Nested List types are not supported"
 											   + elementTypeSignature.getName()

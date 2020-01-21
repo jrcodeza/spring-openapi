@@ -21,7 +21,9 @@ There is also short article describing usage of spring-openapi generator here:
 https://medium.com/@remenec.jakub/openapi-3-spec-and-client-generation-on-java-spring-application-38a9ba5a2932.
 
 ## Current version
-**1.3.0**
+**1.4.0**
+
+Now generator supports also OpenAPI version 2 generation.
 
 Release notes: https://github.com/jrcodeza/spring-openapi/blob/master/CHANGELOG.md 
 
@@ -94,7 +96,7 @@ Include dependency
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-schema-generator</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -235,7 +237,7 @@ Include dependency
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-client-generator</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -256,7 +258,7 @@ new OpenApiClientGenerator().generateClient(
 <dependency>
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi-client-generator-plugin</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 

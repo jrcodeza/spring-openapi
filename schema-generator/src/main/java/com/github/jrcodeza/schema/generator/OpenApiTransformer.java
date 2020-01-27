@@ -93,6 +93,7 @@ public abstract class OpenApiTransformer {
 			arraySchema.setItems(createObjectSchema());
 			return arraySchema;
 		}
+		enrichWithTypeAnnotations(arraySchema, annotations);
 		Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
 		if (elementTypeSignature.isPrimitive()) {
 			// primitive type like int

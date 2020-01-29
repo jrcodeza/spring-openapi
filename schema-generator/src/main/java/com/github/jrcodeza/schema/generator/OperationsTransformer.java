@@ -486,6 +486,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			return null;
 		}
 		oasParameter.setSchema(createSchemaFromParameter(parameter, parameterName));
+		enrichWithTypeAnnotations(oasParameter, parameter.getAnnotations());
 		return oasParameter;
 	}
 
@@ -608,7 +609,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 		} else {
 			schema = parseClassRefTypeSignature(clazz, annotations, null);
 		}
-		enrichWithTypeAnnotations(schema, annotations);
 		return schema;
 	}
 

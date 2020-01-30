@@ -23,6 +23,7 @@ import javax.validation.constraints.Size;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
+import io.swagger.v3.oas.models.parameters.Parameter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -268,6 +269,15 @@ public abstract class OpenApiTransformer {
 					enrichWithAccessMode(schema, schemaAnnotation);
 				});
 		enrichWithAnnotation(Deprecated.class, annotations, deprecatedAnnotation -> schema.setDeprecated(true));
+	}
+
+	protected void enrichWithTypeAnnotations(Parameter parameter, Annotation[] annotations) {
+		enrichWithAnnotation(io.swagger.v3.oas.annotations.media.Schema.class, annotations,
+				schemaAnnotation -> {
+					parameter.setDeprecated(schemaAnnotation.deprecated());
+					parameter.setDescription(schemaAnnotation.description());
+				});
+		enrichWithAnnotation(Deprecated.class, annotations, deprecatedAnnotation -> parameter.setDeprecated(true));
 	}
 
 	private void enrichWithAccessMode(Schema<?> schema, io.swagger.v3.oas.annotations.media.Schema schemaAnnotation) {

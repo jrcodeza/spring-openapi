@@ -46,6 +46,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         Schema<?> schema = new Schema<>();
         schema.setType("object");
         schema.setProperties(getClassProperties(clazz, generationContext, requiredFields));
+		enrichWithTypeAnnotations(schema, clazz.getAnnotations());
 
         updateRequiredFields(schema, requiredFields);
 
@@ -108,6 +109,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 
             ComposedSchema composedSchema = new ComposedSchema();
             composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
+            composedSchema.setDescription(schema.getDescription());
             return composedSchema;
         }
     }

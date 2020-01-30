@@ -46,7 +46,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         Schema<?> schema = new Schema<>();
         schema.setType("object");
         schema.setProperties(getClassProperties(clazz, generationContext, requiredFields));
-		enrichWithTypeAnnotations(schema, clazz.getAnnotations());
+		enrichWithTypeAnnotations(schema, clazz.getDeclaredAnnotations());
 
         updateRequiredFields(schema, requiredFields);
 

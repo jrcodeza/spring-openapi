@@ -1,5 +1,6 @@
 # spring-openapi (OpenAPI 3 generator)
 ![Java CI](https://github.com/jrcodeza/spring-openapi/workflows/Java%20CI/badge.svg)
+
 Spring Boot OpenAPI 3 generator. It scans provided packages 
 (model and controller) and generates based on reflection, javax validation
 and spring annotations the OpenAPI 3 json. It is able to handle also

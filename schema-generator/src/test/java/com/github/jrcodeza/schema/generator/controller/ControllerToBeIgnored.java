@@ -1,7 +1,7 @@
 package com.github.jrcodeza.schema.generator.controller;
 
 import com.github.jrcodeza.OpenApiIgnore;
-import com.github.jrcodeza.schema.generator.model.dummy.ValidationDummy;
+import com.github.jrcodeza.schema.generator.domain.dummy.ValidationDummy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;

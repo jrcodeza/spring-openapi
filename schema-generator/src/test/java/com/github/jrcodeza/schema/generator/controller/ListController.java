@@ -2,7 +2,7 @@ package com.github.jrcodeza.schema.generator.controller;
 
 import java.util.List;
 
-import com.github.jrcodeza.schema.generator.model.Car;
+import com.github.jrcodeza.schema.generator.domain.Car;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

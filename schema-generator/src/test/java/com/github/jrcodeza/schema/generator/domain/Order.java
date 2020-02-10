@@ -1,4 +1,4 @@
-package com.github.jrcodeza.schema.generator.model;
+package com.github.jrcodeza.schema.generator.domain;
 
 import java.time.LocalDateTime;
 import java.util.List;

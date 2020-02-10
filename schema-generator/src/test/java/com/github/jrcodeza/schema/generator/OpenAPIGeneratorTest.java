@@ -67,7 +67,7 @@ public class OpenAPIGeneratorTest {
 
     private OpenAPIGenerator createTestGenerator() {
         OpenAPIGenerator openAPIGenerator = new OpenAPIGenerator(
-                singletonList("com.github.jrcodeza.schema.generator.model.*"),
+                singletonList("com.github.jrcodeza.schema.generator.domain.*"),
                 singletonList("com.github.jrcodeza.schema.generator.controller.*"),
                 createTestInfo()
         );

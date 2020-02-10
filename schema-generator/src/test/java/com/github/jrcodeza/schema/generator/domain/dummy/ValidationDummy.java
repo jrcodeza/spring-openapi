@@ -1,4 +1,4 @@
-package com.github.jrcodeza.schema.generator.model.dummy;
+package com.github.jrcodeza.schema.generator.domain.dummy;
 
 import java.math.BigDecimal;
 

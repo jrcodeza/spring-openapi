@@ -8,8 +8,8 @@ import com.github.jrcodeza.OpenApiExamples;
 import com.github.jrcodeza.OpenApiIgnore;
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
-import com.github.jrcodeza.schema.generator.model.OptionsClass;
-import com.github.jrcodeza.schema.generator.model.dummy.ValidationDummy;
+import com.github.jrcodeza.schema.generator.domain.OptionsClass;
+import com.github.jrcodeza.schema.generator.domain.dummy.ValidationDummy;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

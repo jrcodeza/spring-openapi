@@ -14,13 +14,13 @@ import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
+import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ReflectionUtils;
 
-import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -56,7 +56,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             enrichWithDiscriminatorProperty(schema, discriminator);
         }
         if (clazz.getSuperclass() != null) {
-            return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass());
+            return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass(), clazz);
         }
         return schema;
     }
@@ -92,7 +92,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         }
     }
 
-    private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass) {
+    private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass, Class<?> actualClass) {
         if (!isInPackagesToBeScanned(superclass, generationContext)) {
             // adding properties from parent classes is present due to swagger ui bug, after using different ui
             // this becomes relevant only for third party packages
@@ -100,17 +100,28 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
             updateRequiredFields(schema, requiredFields);
             if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
-                return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass());
+                return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass(), superclass);
             }
             return schema;
         } else {
             Schema<?> parentClassSchema = new Schema<>();
             parentClassSchema.set$ref(COMPONENT_REF_PREFIX + superclass.getSimpleName());
 
-            ComposedSchema composedSchema = new ComposedSchema();
+            CustomComposedSchema composedSchema = new CustomComposedSchema();
+            enrichWithAdditionalProperties(composedSchema, generationContext.getInheritanceMap(), superclass.getName(), actualClass.getSimpleName());
             composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
             composedSchema.setDescription(schema.getDescription());
             return composedSchema;
+        }
+    }
+
+    private void enrichWithAdditionalProperties(CustomComposedSchema customComposedSchema, Map<String, InheritanceInfo> inheritanceInfoMap, String superClassName,
+                                                String actualClassName) {
+        if (inheritanceInfoMap.containsKey(superClassName)) {
+            Map<String, String> discriminatorClassMap = inheritanceInfoMap.get(superClassName).getDiscriminatorClassMap();
+            if (discriminatorClassMap.containsKey(actualClassName)) {
+                customComposedSchema.setDiscriminatorValue(discriminatorClassMap.get(actualClassName));
+            }
         }
     }
 
@@ -183,8 +194,8 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     }
 
     @Override
-    protected ComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
-        ComposedSchema schema = new ComposedSchema();
+    protected CustomComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
+        CustomComposedSchema schema = new CustomComposedSchema();
         if (isInPackagesToBeScanned(typeSignature, generationContext)) {
             if (generationContext.getInheritanceMap().containsKey(typeSignature.getName())) {
                 InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(typeSignature.getName());

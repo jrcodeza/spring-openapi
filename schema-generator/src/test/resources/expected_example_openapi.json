@@ -1182,23 +1182,6 @@
           }
         ]
       },
-      "GenerationContext": {
-        "type": "object",
-        "properties": {
-          "modelPackages": {
-            "type": "array",
-            "description": ". Test schemaField interceptor",
-            "items": {
-              "type": "string"
-            }
-          },
-          "inheritanceMap": {
-            "type": "object",
-            "description": ". Test schemaField interceptor"
-          }
-        },
-        "description": ". Test schema interceptors"
-      },
       "Entity": {
         "required": [
           "id"
@@ -1235,7 +1218,8 @@
               }
             }
           }
-        ]
+        ],
+        "x-discriminator-value": "laptop"
       },
       "Van": {
         "description": ". Test schema interceptors",
@@ -1480,27 +1464,6 @@
         },
         "description": ". Test schema interceptors"
       },
-      "Header": {
-        "required": [
-          "required"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": ". Test schemaField interceptor"
-          },
-          "description": {
-            "type": "string",
-            "description": ". Test schemaField interceptor"
-          },
-          "required": {
-            "type": "boolean",
-            "description": ". Test schemaField interceptor"
-          }
-        },
-        "description": ". Test schema interceptors"
-      },
       "Car": {
         "description": ". Test schema interceptors",
         "example": {
@@ -1540,7 +1503,8 @@
               }
             }
           }
-        ]
+        ],
+        "x-discriminator-value": "car"
       },
       "CarType": {
         "type": "string",

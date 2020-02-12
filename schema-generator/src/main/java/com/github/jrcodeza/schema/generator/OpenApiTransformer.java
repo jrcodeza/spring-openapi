@@ -1,5 +1,21 @@
 package com.github.jrcodeza.schema.generator;
 
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,26 +29,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.validation.constraints.DecimalMax;
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
-
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
-
-import io.swagger.v3.oas.models.parameters.Parameter;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.ComposedSchema;
-import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static java.lang.String.format;
@@ -111,16 +109,6 @@ public abstract class OpenApiTransformer {
 				arraySchema.setItems(itemSchema);
 				return arraySchema;
 			}
-			String className = elementTypeSignature.getName();
-			// is inheritance needed
-			if (generationContext != null && generationContext.getInheritanceMap() != null && generationContext.getInheritanceMap().containsKey(className)) {
-				InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(className);
-				ComposedSchema itemSchema = new ComposedSchema();
-				itemSchema.setOneOf(createOneOf(inheritanceInfo));
-				itemSchema.setDiscriminator(createDiscriminator(inheritanceInfo));
-				arraySchema.setItems(itemSchema);
-				return arraySchema;
-			}
 			// else do ref
 			Schema<?> itemSchema = new Schema<>();
 			itemSchema.set$ref(COMPONENT_REF_PREFIX + elementTypeSignature.getSimpleName());
@@ -149,16 +137,6 @@ public abstract class OpenApiTransformer {
 		discriminator.setPropertyName(inheritanceInfo.getDiscriminatorFieldName());
 		discriminator.setMapping(discriminatorTypeMapping);
 		return discriminator;
-	}
-
-	protected List<Schema> createOneOf(InheritanceInfo inheritanceInfo) {
-		return inheritanceInfo.getDiscriminatorClassMap().keySet().stream()
-				.map(key -> {
-					Schema<?> schema = new Schema<>();
-					schema.set$ref(COMPONENT_REF_PREFIX + key);
-					return schema;
-				})
-				.collect(Collectors.toList());
 	}
 
 	@SuppressWarnings("squid:S1192") // better in-place defined for better readability

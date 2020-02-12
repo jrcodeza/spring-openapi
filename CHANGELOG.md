@@ -1,5 +1,12 @@
 # Release notes
 
+## 1.4.2
+#34 https://github.com/jrcodeza/spring-openapi/issues/34
+#36 https://github.com/jrcodeza/spring-openapi/issues/36
+
+## 1.4.1
+Bugfixes.
+
 ## 1.4.0
 Added support for OpenAPI version 2 spec generation. For now only
 runtime generation (no maven plugin).

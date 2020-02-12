@@ -1,5 +1,12 @@
 package com.github.jrcodeza.schema.generator;
 
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.ReflectionUtils;
+
+import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -11,19 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.validation.constraints.NotNull;
-
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.ReflectionUtils;
-
-import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static com.github.jrcodeza.schema.generator.util.GeneratorUtils.shouldBeIgnored;
@@ -197,12 +195,6 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     protected CustomComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
         CustomComposedSchema schema = new CustomComposedSchema();
         if (isInPackagesToBeScanned(typeSignature, generationContext)) {
-            if (generationContext.getInheritanceMap().containsKey(typeSignature.getName())) {
-                InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(typeSignature.getName());
-                schema.setOneOf(createOneOf(inheritanceInfo));
-                schema.setDiscriminator(createDiscriminator(inheritanceInfo));
-                return schema;
-            }
             schema.set$ref(COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
             return schema;
         }

@@ -18,6 +18,7 @@ import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
@@ -26,6 +27,7 @@ import io.swagger.models.ComposedModel;
 import io.swagger.models.Model;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.RefModel;
+import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.UntypedProperty;
@@ -109,6 +111,10 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 			optionalProperty = createBaseTypeProperty(field, annotations);
 		} else if (typeSignature.isArray()) {
 			optionalProperty = createArrayTypeProperty(generationContext, typeSignature, annotations);
+		} else if (StringUtils.equalsIgnoreCase(typeSignature.getName(), "java.lang.Object")) {
+			ObjectProperty objectSchema = new ObjectProperty();
+			objectSchema.setName(field.getName());
+			return Optional.of(objectSchema);
 		} else if (typeSignature.isAssignableFrom(List.class)) {
 			if (field.getGenericType() instanceof ParameterizedType) {
 				Class<?> listGenericParameter = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];

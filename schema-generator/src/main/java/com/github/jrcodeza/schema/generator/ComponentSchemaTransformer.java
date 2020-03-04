@@ -1,12 +1,5 @@
 package com.github.jrcodeza.schema.generator;
 
-import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.ReflectionUtils;
-
-import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -18,10 +11,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.validation.constraints.NotNull;
+
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.ReflectionUtils;
+
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static com.github.jrcodeza.schema.generator.util.GeneratorUtils.shouldBeIgnored;
@@ -149,9 +152,13 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             return createBaseTypeSchema(field, requiredFields, annotations);
         } else if (typeSignature.isArray()) {
             return createArrayTypeSchema(generationContext, typeSignature, annotations);
+        } else if (StringUtils.equalsIgnoreCase(typeSignature.getName(), "java.lang.Object")) {
+            ObjectSchema objectSchema = new ObjectSchema();
+            objectSchema.setName(field.getName());
+            return Optional.of(objectSchema);
         } else if (typeSignature.isAssignableFrom(List.class)) {
             if (field.getGenericType() instanceof ParameterizedType) {
-                Class<?> listGenericParameter = (Class<?>)((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+                Class<?> listGenericParameter = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
                 return Optional.of(parseArraySignature(listGenericParameter, generationContext, annotations));
             }
             return Optional.empty();

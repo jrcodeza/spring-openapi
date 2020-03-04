@@ -1161,6 +1161,10 @@
                     "items": {
                         "$ref": "#/definitions/Customer"
                     }
+                },
+                "object": {
+                    "type": "object",
+                    "description": ". Test schemaField interceptor"
                 }
             },
             "description": ". Test schema interceptors"

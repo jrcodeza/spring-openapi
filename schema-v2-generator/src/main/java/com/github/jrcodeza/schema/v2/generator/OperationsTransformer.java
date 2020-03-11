@@ -118,8 +118,35 @@ public class OperationsTransformer extends OpenApiTransformer {
 			ReflectionUtils.doWithMethods(clazz, method -> createOperation(method, baseControllerPath, operationsMap, clazz.getSimpleName()),
 										  this::isOperationMethod);
 		}
-
+		fixDuplicateOperationIds(operationsMap);
 		return operationsMap;
+	}
+
+	private void fixDuplicateOperationIds(Map<String, Path> operationsMap) {
+		Map<String, Integer> operationIdCount = new HashMap<>();
+		operationsMap.values().forEach(pathItem -> {
+			handleOperation(pathItem.getHead(), operationIdCount);
+			handleOperation(pathItem.getOptions(), operationIdCount);
+			handleOperation(pathItem.getPost(), operationIdCount);
+			handleOperation(pathItem.getPatch(), operationIdCount);
+			handleOperation(pathItem.getPut(), operationIdCount);
+			handleOperation(pathItem.getGet(), operationIdCount);
+			handleOperation(pathItem.getDelete(), operationIdCount);
+		});
+	}
+
+	private void handleOperation(Operation operation, Map<String, Integer> operationIdCount) {
+		if (operation == null) {
+			return;
+		}
+		String operationId = operation.getOperationId();
+		if (operationIdCount.containsKey(operationId)) {
+			Integer newValue = operationIdCount.get(operationId) + 1;
+			operation.setOperationId(operationId + "_" + newValue);
+			operationIdCount.put(operationId, newValue);
+			return;
+		}
+		operationIdCount.put(operationId, 0);
 	}
 
 	private void createOperation(Method method, String baseControllerPath, Map<String, Path> operationsMap, String controllerClassName) {
@@ -633,12 +660,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	private String getOperationId(String nameFromAnnotation, Method method, HttpMethod httpMethod) {
-		String operationId = StringUtils.isBlank(nameFromAnnotation) ? method.getName() + "Using" + httpMethod.name() : nameFromAnnotation;
-		if (operationIds.contains(operationId)) {
-			operationId = method.getDeclaringClass().getSimpleName() + operationId;
-		}
-		operationIds.add(operationId);
-		return operationId;
+		return StringUtils.isBlank(nameFromAnnotation) ? method.getName() + "Using" + httpMethod.name() : nameFromAnnotation;
 	}
 
 	private <T extends Annotation> Optional<T> getAnnotation(Method method, Class<T> annotationClass) {

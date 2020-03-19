@@ -579,12 +579,7 @@
             "in": "query",
             "description": ". Interceptor OperationParameter test",
             "required": true,
-            "type": "string",
-            "enum": [
-              "PERSONAL",
-              "TRUCK",
-              "VAN"
-            ]
+            "$ref": "#/definitions/CarType"
           }
         ],
         "responses": {

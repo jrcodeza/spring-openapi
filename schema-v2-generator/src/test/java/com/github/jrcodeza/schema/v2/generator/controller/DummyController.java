@@ -26,8 +26,9 @@ import com.github.jrcodeza.OpenApiExamples;
 import com.github.jrcodeza.OpenApiIgnore;
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
-import com.github.jrcodeza.schema.v2.generator.model.OptionsClass;
-import com.github.jrcodeza.schema.v2.generator.model.dummy.ValidationDummy;
+import com.github.jrcodeza.schema.v2.generator.domain.CarType;
+import com.github.jrcodeza.schema.v2.generator.domain.OptionsClass;
+import com.github.jrcodeza.schema.v2.generator.domain.dummy.ValidationDummy;
 
 @RestController
 @RequestMapping("/dummy")
@@ -141,6 +142,11 @@ public class DummyController {
 	@GetMapping(path = "/fileWithResponseAnnotation", produces = "application/pdf")
 	@Response(responseCode = 200, description = "desc", responseBody = MultipartFile.class)
 	public MultipartFile getFileWithResponseAnnotation() {
+		return null;
+	}
+
+	@GetMapping(path = "/enumAsParam")
+	public ValidationDummy enumAsParam(@RequestParam CarType carType) {
 		return null;
 	}
 }

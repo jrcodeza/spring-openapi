@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.jrcodeza.OpenApiIgnore;
-import com.github.jrcodeza.schema.v2.generator.model.dummy.ValidationDummy;
+import com.github.jrcodeza.schema.v2.generator.domain.dummy.ValidationDummy;
 
 @RestController
 @RequestMapping("/toBeIgnored")

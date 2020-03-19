@@ -1,4 +1,4 @@
-package com.github.jrcodeza.schema.v2.generator.model;
+package com.github.jrcodeza.schema.v2.generator.domain;
 
 import com.github.jrcodeza.OpenApiIgnore;
 

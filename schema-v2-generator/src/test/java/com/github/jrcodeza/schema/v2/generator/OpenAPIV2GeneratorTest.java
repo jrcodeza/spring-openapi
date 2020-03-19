@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.jrcodeza.schema.v2.generator.config.CompatibilityMode;
+import com.github.jrcodeza.schema.v2.generator.config.builder.OpenApiV2GeneratorConfigBuilder;
 import com.github.jrcodeza.schema.v2.generator.interceptors.TestOperationInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.TestOperationParameterInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.TestRequestBodyInterceptor;
@@ -33,6 +35,15 @@ public class OpenAPIV2GeneratorTest {
 		assertOpenApiResult(openAPIJson, "expected_v2_openapi.json");
 	}
 
+	@Test
+	public void generateStandardScenarioWithCustomConfig() throws JsonProcessingException {
+		String openAPIJson = createTestGenerator().generateJson(OpenApiV2GeneratorConfigBuilder.empty()
+				.withCompatibilityMode(CompatibilityMode.NSWAG)
+				.build()
+		);
+		assertOpenApiResult(openAPIJson, "expected_v2_openapi_nswag.json");
+	}
+
 	private void assertOpenApiResult(String openAPI, String pathToExpectedFile) {
 		try {
 			JSONAssert.assertEquals(getResourceFileAsString(pathToExpectedFile), openAPI, true);
@@ -43,7 +54,7 @@ public class OpenAPIV2GeneratorTest {
 
 	private OpenAPIV2Generator createTestGenerator() {
 		OpenAPIV2Generator openAPIGenerator = new OpenAPIV2Generator(
-				singletonList("com.github.jrcodeza.schema.v2.generator.model.*"),
+				singletonList("com.github.jrcodeza.schema.v2.generator.domain.*"),
 				singletonList("com.github.jrcodeza.schema.v2.generator.controller.*"),
 				createTestInfo()
 		);

@@ -661,6 +661,47 @@
                 }
             }
         },
+        "/dummy/enumAsParam": {
+            "get": {
+                "tags": [
+                    "dummy-controller"
+                ],
+                "summary": "Interceptor summary",
+                "operationId": "enumAsParamUsingGET",
+                "parameters": [
+                    {
+                        "name": "Test-Global-Header",
+                        "in": "header",
+                        "description": "Some desc",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "carType",
+                        "in": "query",
+                        "description": ". Interceptor OperationParameter test",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/CarType"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationDummy"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/dummy/requestBodyList": {
             "post": {
                 "tags": [

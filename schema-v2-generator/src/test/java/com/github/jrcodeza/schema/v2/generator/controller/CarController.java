@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-import com.github.jrcodeza.schema.v2.generator.model.Car;
+import com.github.jrcodeza.schema.v2.generator.domain.Car;
 
 @RestController
 @RequestMapping("/cars")

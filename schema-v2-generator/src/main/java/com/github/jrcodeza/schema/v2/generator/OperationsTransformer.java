@@ -20,9 +20,11 @@ import java.util.stream.Stream;
 
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
+import com.github.jrcodeza.schema.v2.generator.config.OpenApiV2GeneratorConfig;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.RequestBodyInterceptor;
+import com.github.jrcodeza.schema.v2.generator.model.CustomQueryParameter;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
@@ -57,7 +59,6 @@ import io.swagger.models.parameters.AbstractSerializableParameter;
 import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.HeaderParameter;
 import io.swagger.models.parameters.PathParameter;
-import io.swagger.models.parameters.QueryParameter;
 import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.FileProperty;
 import io.swagger.models.properties.ObjectProperty;
@@ -103,7 +104,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 		this.globalHeaders = globalHeaders;
 	}
 
-	public Map<String, Path> transformOperations(List<Class<?>> restControllerClasses) {
+	public Map<String, Path> transformOperations(List<Class<?>> restControllerClasses, OpenApiV2GeneratorConfig config) {
+		super.openApiV2GeneratorConfig.set(config);
 		operationIds.clear();
 		final Map<String, Path> operationsMap = new HashMap<>();
 
@@ -474,9 +476,10 @@ public class OperationsTransformer extends OpenApiTransformer {
 			oasParameter.setRequired(true);
 		} else if (parameter.getAnnotation(RequestParam.class) != null && !parameter.getType().isAssignableFrom(MultipartFile.class)) {
 			RequestParam requestParamAnnotation = parameter.getAnnotation(RequestParam.class);
-			oasParameter = new QueryParameter();
+			oasParameter = new CustomQueryParameter();
 			oasParameter.setName(resolveNameFromAnnotation(requestParamAnnotation.name(), requestParamAnnotation.value(), parameterName));
 			oasParameter.setRequired(requestParamAnnotation.required());
+			oasParameter.setType(null);
 		} else if (parameter.getAnnotation(RequestHeader.class) != null) {
 			RequestHeader requestHeaderAnnotation = parameter.getAnnotation(RequestHeader.class);
 			oasParameter = new HeaderParameter();

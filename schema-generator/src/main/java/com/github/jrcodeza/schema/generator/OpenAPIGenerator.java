@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.jrcodeza.OpenApiIgnore;
 import com.github.jrcodeza.schema.generator.config.OpenApiGeneratorConfig;
 import com.github.jrcodeza.schema.generator.config.builder.OpenApiGeneratorConfigBuilder;
+import com.github.jrcodeza.schema.generator.filters.OperationFilter;
+import com.github.jrcodeza.schema.generator.filters.OperationParameterFilter;
+import com.github.jrcodeza.schema.generator.filters.SchemaFieldFilter;
 import com.github.jrcodeza.schema.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
@@ -25,6 +29,7 @@ import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 
+import com.sun.org.apache.xpath.internal.Arg;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,10 +68,14 @@ public class OpenAPIGenerator {
     private final List<OperationInterceptor> operationInterceptors;
     private final List<RequestBodyInterceptor> requestBodyInterceptors;
 
+    private AtomicReference<OperationFilter> operationFilter;
+    private AtomicReference<OperationParameterFilter> operationParameterFilter;
+    private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
+
     private final List<Header> globalHeaders;
 
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
-        this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, null);
     }
 
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info,
@@ -74,16 +83,24 @@ public class OpenAPIGenerator {
                             List<SchemaFieldInterceptor> schemaFieldInterceptors,
                             List<OperationParameterInterceptor> operationParameterInterceptors,
                             List<OperationInterceptor> operationInterceptors,
-                            List<RequestBodyInterceptor> requestBodyInterceptors) {
+                            List<RequestBodyInterceptor> requestBodyInterceptors,
+                            OperationFilter operationFilter,
+                            OperationParameterFilter operationParameterFilter,
+                            SchemaFieldFilter schemaFieldFilter) {
         this.modelPackages = modelPackages;
         this.controllerBasePackages = controllerBasePackages;
-        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors);
+
+        this.operationFilter = new AtomicReference<>(operationFilter);
+        this.operationParameterFilter = new AtomicReference<>(operationParameterFilter);
+        this.schemaFieldFilter = new AtomicReference<>(schemaFieldFilter);
+
+        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter);
         this.globalHeaders = new ArrayList<>();
 
         GenerationContext operationsGenerationContext = new GenerationContext(null, removeRegexFormatFromPackages(modelPackages));
         this.operationsTransformer = new OperationsTransformer(
-                operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders
-        );
+                operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders,
+                this.operationFilter, this.operationParameterFilter);
 
         this.info = info;
         this.schemaInterceptors = schemaInterceptors;
@@ -141,6 +158,18 @@ public class OpenAPIGenerator {
 
     public void addGlobalHeader(String name, String description, boolean required) {
         globalHeaders.add(new Header(name, description, required));
+    }
+
+    public void setOperationFilter(OperationFilter operationFilter) {
+        this.operationFilter.set(operationFilter);
+    }
+
+    public void setOperationParameterFilter(OperationParameterFilter operationParameterFilter) {
+        this.operationParameterFilter.set(operationParameterFilter);
+    }
+
+    public void setSchemaFieldFilter(SchemaFieldFilter schemaFieldFilter) {
+        this.schemaFieldFilter.set(schemaFieldFilter);
     }
 
     private <T, U extends T> void addInterceptor(List<T> interceptors, U interceptor) {

@@ -10,6 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jrcodeza.schema.generator.OpenAPIGenerator;
 import com.github.jrcodeza.schema.generator.config.OpenApiGeneratorConfig;
 import com.github.jrcodeza.schema.generator.config.builder.OpenApiGeneratorConfigBuilder;
+import com.github.jrcodeza.schema.generator.filters.OperationFilter;
+import com.github.jrcodeza.schema.generator.filters.OperationParameterFilter;
+import com.github.jrcodeza.schema.generator.filters.SchemaFieldFilter;
 import com.github.jrcodeza.schema.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
@@ -66,6 +69,15 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 	private List<String> requestBodyInterceptors;
 
 	@Parameter
+	private String operationFilter;
+
+	@Parameter
+	private String operationParameterFilter;
+
+	@Parameter
+	private String schemaFieldFilter;
+
+	@Parameter
 	private Boolean generateExamples;
 
 	@Parameter
@@ -78,7 +90,10 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 				parseInputInterceptors(schemaFieldInterceptors, SchemaFieldInterceptor.class),
 				parseInputInterceptors(operationParameterInterceptors, OperationParameterInterceptor.class),
 				parseInputInterceptors(operationInterceptors, OperationInterceptor.class),
-				parseInputInterceptors(requestBodyInterceptors, RequestBodyInterceptor.class)
+				parseInputInterceptors(requestBodyInterceptors, RequestBodyInterceptor.class),
+				parseInputFilter(operationFilter, OperationFilter.class),
+				parseInputFilter(operationParameterFilter, OperationParameterFilter.class),
+				parseInputFilter(schemaFieldFilter, SchemaFieldFilter.class)
 		);
 
 		OpenApiGeneratorConfig openApiGeneratorConfig = OpenApiGeneratorConfigBuilder.defaultConfig().build();
@@ -102,6 +117,14 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 		} catch (IOException e) {
 			getLog().error("Cannot serialize generated OpenAPI spec", e);
 		}
+	}
+
+	private <T> T parseInputFilter(String className, Class<T> clazz) {
+		if (className == null || className.isEmpty()) {
+			return null;
+		}
+
+		return instantiateClass(className, clazz);
 	}
 
 	private <T> List<T> parseInputInterceptors(List<String> classNames, Class<T> clazz) {

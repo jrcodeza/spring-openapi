@@ -120,7 +120,7 @@ public class GenerateOpenApiSchemaMojo extends AbstractMojo {
 	}
 
 	private <T> T parseInputFilter(String className, Class<T> clazz) {
-		if (className == null || className.isEmpty()) {
+		if (StringUtils.isEmpty(className)) {
 			return null;
 		}
 

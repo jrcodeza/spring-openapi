@@ -20,6 +20,11 @@ public final class OpenApiV2GeneratorConfigBuilder {
 		return this;
 	}
 
+	public OpenApiV2GeneratorConfigBuilder withBasePath(String basePath) {
+		openApiV2GeneratorConfig.setBasePath(basePath);
+		return this;
+	}
+
 	public OpenApiV2GeneratorConfig build() {
 		return openApiV2GeneratorConfig;
 	}

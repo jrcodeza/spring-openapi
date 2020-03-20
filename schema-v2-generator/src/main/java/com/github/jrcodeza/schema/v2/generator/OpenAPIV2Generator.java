@@ -1,6 +1,5 @@
 package com.github.jrcodeza.schema.v2.generator;
 
-import io.swagger.models.ComposedModel;
 import io.swagger.models.Info;
 import io.swagger.models.Model;
 import io.swagger.models.ModelImpl;
@@ -49,24 +48,19 @@ import static java.util.Collections.unmodifiableList;
 
 public class OpenAPIV2Generator {
 
-	private static Logger logger = LoggerFactory.getLogger(OpenAPIV2Generator.class);
-
 	private static final String DEFAULT_DISCRIMINATOR_NAME = "type";
-
-	private List<String> modelPackages;
-	private List<String> controllerBasePackages;
-
+	private static Logger logger = LoggerFactory.getLogger(OpenAPIV2Generator.class);
 	private final ComponentSchemaTransformer componentSchemaTransformer;
 	private final OperationsTransformer operationsTransformer;
 	private final Info info;
-
 	private final List<SchemaInterceptor> schemaInterceptors;
 	private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
 	private final List<OperationParameterInterceptor> operationParameterInterceptors;
 	private final List<OperationInterceptor> operationInterceptors;
 	private final List<RequestBodyInterceptor> requestBodyInterceptors;
-
 	private final List<Header> globalHeaders;
+	private List<String> modelPackages;
+	private List<String> controllerBasePackages;
 
 	public OpenAPIV2Generator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
 		this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
@@ -80,11 +74,11 @@ public class OpenAPIV2Generator {
 							  List<RequestBodyInterceptor> requestBodyInterceptors) {
 		this.modelPackages = modelPackages;
 		this.controllerBasePackages = controllerBasePackages;
-		this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors);
-		this.globalHeaders = new ArrayList<>();
+		componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors);
+		globalHeaders = new ArrayList<>();
 
 		GenerationContext operationsGenerationContext = new GenerationContext(null, removeRegexFormatFromPackages(modelPackages));
-		this.operationsTransformer = new OperationsTransformer(
+		operationsTransformer = new OperationsTransformer(
 				operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders
 		);
 
@@ -102,6 +96,7 @@ public class OpenAPIV2Generator {
 
 	public String generateJson(OpenApiV2GeneratorConfig config) throws JsonProcessingException {
 		Swagger openAPI = generate(config);
+		openAPI.setBasePath(config.getBasePath());
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		DocumentContext doc = JsonPath.parse(objectMapper.writeValueAsString(openAPI));
@@ -125,23 +120,23 @@ public class OpenAPIV2Generator {
 	}
 
 	public void addSchemaInterceptor(SchemaInterceptor schemaInterceptor) {
-		this.schemaInterceptors.add(schemaInterceptor);
+		schemaInterceptors.add(schemaInterceptor);
 	}
 
 	public void addSchemaFieldInterceptor(SchemaFieldInterceptor schemaFieldInterceptor) {
-		this.schemaFieldInterceptors.add(schemaFieldInterceptor);
+		schemaFieldInterceptors.add(schemaFieldInterceptor);
 	}
 
 	public void addOperationParameterInterceptor(OperationParameterInterceptor operationParameterInterceptor) {
-		this.operationParameterInterceptors.add(operationParameterInterceptor);
+		operationParameterInterceptors.add(operationParameterInterceptor);
 	}
 
 	public void addOperationInterceptor(OperationInterceptor operationInterceptor) {
-		this.operationInterceptors.add(operationInterceptor);
+		operationInterceptors.add(operationInterceptor);
 	}
 
 	public void addRequestBodyInterceptor(RequestBodyInterceptor requestBodyInterceptor) {
-		this.requestBodyInterceptors.add(requestBodyInterceptor);
+		requestBodyInterceptors.add(requestBodyInterceptor);
 	}
 
 	public void addGlobalHeader(String name, String description, boolean required) {

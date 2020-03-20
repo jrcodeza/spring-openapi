@@ -7,12 +7,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,8 +75,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private static final List<Class<?>> OPERATION_ANNOTATIONS = asList(RequestMapping.class, PostMapping.class, GetMapping.class, PutMapping.class,
 			PatchMapping.class, DeleteMapping.class);
 
-	private final Set<String> operationIds = new HashSet<>();
-
 	private final GenerationContext generationContext;
 	private final List<OperationParameterInterceptor> operationParameterInterceptors;
 	private final List<OperationInterceptor> operationInterceptors;
@@ -98,7 +94,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 	}
 
 	public Map<String, PathItem> transformOperations(List<Class<?>> restControllerClasses) {
-		operationIds.clear();
 		final Map<String, PathItem> operationsMap = new HashMap<>();
 
 		for (Class<?> clazz : restControllerClasses) {

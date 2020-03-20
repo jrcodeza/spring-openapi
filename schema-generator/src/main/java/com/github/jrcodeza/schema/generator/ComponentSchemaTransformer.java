@@ -9,10 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
+import com.github.jrcodeza.schema.generator.filters.SchemaFieldFilter;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
@@ -33,9 +35,11 @@ import static com.github.jrcodeza.schema.generator.util.GeneratorUtils.shouldBeI
 public class ComponentSchemaTransformer extends OpenApiTransformer {
 
     private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
+    private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
 
-    public ComponentSchemaTransformer(List<SchemaFieldInterceptor> schemaFieldInterceptors) {
+    public ComponentSchemaTransformer(List<SchemaFieldInterceptor> schemaFieldInterceptors, AtomicReference<SchemaFieldFilter> schemaFieldFilter) {
         this.schemaFieldInterceptors = schemaFieldInterceptors;
+        this.schemaFieldFilter = schemaFieldFilter;
     }
 
     public Schema transformSimpleSchema(Class<?> clazz, GenerationContext generationContext) {
@@ -129,7 +133,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     private Map<String, Schema> getClassProperties(Class<?> clazz, GenerationContext generationContext, List<String> requiredFields) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
         ReflectionUtils.doWithLocalFields(clazz,
-                field -> getFieldSchema(field, generationContext, requiredFields).ifPresent(schema -> {
+                field -> getFieldSchema(clazz, field, generationContext, requiredFields).ifPresent(schema -> {
                     schemaFieldInterceptors.forEach(modelClassFieldInterceptor -> modelClassFieldInterceptor.intercept(clazz, field, schema));
                     classPropertyMap.put(field.getName(), schema);
                 })
@@ -137,8 +141,8 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         return classPropertyMap;
     }
 
-    private Optional<Schema> getFieldSchema(Field field, GenerationContext generationContext, List<String> requiredFields) {
-        if (shouldBeIgnored(field)) {
+    private Optional<Schema> getFieldSchema(Class<?> clazz, Field field, GenerationContext generationContext, List<String> requiredFields) {
+        if (shouldIgnoreField(clazz, field)) {
             return Optional.empty();
         }
 
@@ -165,6 +169,14 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         } else {
             return createClassRefSchema(generationContext, typeSignature, annotations);
         }
+    }
+
+    private boolean shouldIgnoreField(Class<?> clazz, Field field) {
+        if (shouldBeIgnored(field)) {
+            return true;
+        }
+
+        return schemaFieldFilter.get() != null && schemaFieldFilter.get().shouldIgnore(clazz, field);
     }
 
     private Optional<Schema> createClassRefSchema(GenerationContext generationContext, Class<?> typeClass, Annotation[] annotations) {

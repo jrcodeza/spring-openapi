@@ -8,6 +8,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jrcodeza.schema.generator.config.builder.OpenApiGeneratorConfigBuilder;
+import com.github.jrcodeza.schema.generator.filters.TestOperationFilter;
+import com.github.jrcodeza.schema.generator.filters.TestOperationParameterFilter;
+import com.github.jrcodeza.schema.generator.filters.TestSchemaFieldFilter;
 import com.github.jrcodeza.schema.generator.interceptors.TestOperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.TestOperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.TestRequestBodyInterceptor;
@@ -48,6 +51,17 @@ public class OpenAPIGeneratorTest {
                         .build()
         );
         assertOpenApiResult(openAPI, "expected_example_openapi.json");
+    }
+
+    @Test
+    public void generateFilteredScenario() {
+        OpenAPIGenerator openAPIGenerator = createTestGenerator();
+        openAPIGenerator.setOperationFilter(new TestOperationFilter());
+        openAPIGenerator.setOperationParameterFilter(new TestOperationParameterFilter());
+        openAPIGenerator.setSchemaFieldFilter(new TestSchemaFieldFilter());
+
+        OpenAPI openAPI = openAPIGenerator.generate();
+        assertOpenApiResult(openAPI, "expected_filtered_openapi.json");
     }
 
     private void assertOpenApiResult(OpenAPI openAPI, String pathToExpectedFile) {

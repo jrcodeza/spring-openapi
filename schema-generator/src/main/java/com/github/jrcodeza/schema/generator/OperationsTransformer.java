@@ -11,12 +11,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
+import com.github.jrcodeza.schema.generator.filters.OperationFilter;
+import com.github.jrcodeza.schema.generator.filters.OperationParameterFilter;
 import com.github.jrcodeza.schema.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
@@ -81,16 +85,23 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private final List<RequestBodyInterceptor> requestBodyInterceptors;
 	private final List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders;
 
+	private final AtomicReference<OperationFilter> operationFilter;
+	private final AtomicReference<OperationParameterFilter> operationParameterFilter;
+
 	public OperationsTransformer(GenerationContext generationContext,
 								 List<OperationParameterInterceptor> operationParameterInterceptors,
 								 List<OperationInterceptor> operationInterceptors,
 								 List<RequestBodyInterceptor> requestBodyInterceptors,
-								 List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders) {
+								 List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders,
+								 AtomicReference<OperationFilter> operationFilter,
+								 AtomicReference<OperationParameterFilter> operationParameterFilter) {
 		this.generationContext = generationContext;
 		this.operationParameterInterceptors = operationParameterInterceptors;
 		this.operationInterceptors = operationInterceptors;
 		this.requestBodyInterceptors = requestBodyInterceptors;
 		this.globalHeaders = globalHeaders;
+		this.operationFilter = operationFilter;
+		this.operationParameterFilter = operationParameterFilter;
 	}
 
 	public Map<String, PathItem> transformOperations(List<Class<?>> restControllerClasses) {
@@ -416,12 +427,12 @@ public class OperationsTransformer extends OpenApiTransformer {
 		addGlobalHeaders(result);
 		for (int i = 0; i < parameters.length; i++) {
 			Parameter actualParameter = parameters[i];
-			if (shouldBeIgnored(actualParameter)) {
-				logger.info("Ignoring parameter {}", parameterNames[i]);
+			String parameterName = parameterNames[i];
+			if (shouldIgnoreParameter(method, actualParameter, parameterName)) {
+				logger.info("Ignoring parameter {}", parameterName);
 				continue;
 			}
 			if (shouldBeIncludedInDocumentation(actualParameter)) {
-				String parameterName = parameterNames[i];
 				io.swagger.v3.oas.models.parameters.Parameter oasParameter = mapQueryParameter(actualParameter, parameterName);
 				if (oasParameter != null) {
 					operationParameterInterceptors.forEach(interceptor -> interceptor.intercept(method, actualParameter, parameterName, oasParameter));
@@ -430,6 +441,15 @@ public class OperationsTransformer extends OpenApiTransformer {
 			}
 		}
 		return result;
+	}
+
+	private boolean shouldIgnoreParameter(Method method, Parameter parameter, String parameterName) {
+		if (shouldBeIgnored(parameter)) {
+			return true;
+		}
+
+		return this.operationParameterFilter.get() != null
+				&& this.operationParameterFilter.get().shouldIgnore(method, parameter, parameterName);
 	}
 
 	private void addGlobalHeaders(List<io.swagger.v3.oas.models.parameters.Parameter> result) {
@@ -671,8 +691,15 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return Optional.ofNullable(method.getAnnotation(annotationClass));
 	}
 
-	private boolean isOperationMethod(Method method) {
+	private boolean shouldIgnoreMethod(Method method) {
 		if (shouldBeIgnored(method)) {
+			return true;
+		}
+		return this.operationFilter.get() != null && this.operationFilter.get().shouldIgnore(method);
+	}
+
+	private boolean isOperationMethod(Method method) {
+		if (shouldIgnoreMethod(method)) {
 			logger.info("Ignoring operation {}", method.getName());
 			return false;
 		}

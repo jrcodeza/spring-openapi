@@ -83,6 +83,15 @@ public class OpenAPIGenerator {
                             List<SchemaFieldInterceptor> schemaFieldInterceptors,
                             List<OperationParameterInterceptor> operationParameterInterceptors,
                             List<OperationInterceptor> operationInterceptors,
+                            List<RequestBodyInterceptor> requestBodyInterceptors) {
+        this(modelPackages, controllerBasePackages, info, schemaInterceptors, schemaFieldInterceptors, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, null, null, null);
+    }
+
+    public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info,
+                            List<SchemaInterceptor> schemaInterceptors,
+                            List<SchemaFieldInterceptor> schemaFieldInterceptors,
+                            List<OperationParameterInterceptor> operationParameterInterceptors,
+                            List<OperationInterceptor> operationInterceptors,
                             List<RequestBodyInterceptor> requestBodyInterceptors,
                             OperationFilter operationFilter,
                             OperationParameterFilter operationParameterFilter,

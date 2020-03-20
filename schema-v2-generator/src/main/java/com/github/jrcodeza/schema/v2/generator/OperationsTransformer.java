@@ -8,23 +8,24 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
+import com.github.jrcodeza.schema.v2.generator.config.CompatibilityMode;
 import com.github.jrcodeza.schema.v2.generator.config.OpenApiV2GeneratorConfig;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.RequestBodyInterceptor;
+import com.github.jrcodeza.schema.v2.generator.model.CustomBodyParameter;
 import com.github.jrcodeza.schema.v2.generator.model.CustomQueryParameter;
+import com.github.jrcodeza.schema.v2.generator.model.CustomSchema;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
@@ -66,11 +67,13 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.StringProperty;
 
+import static com.github.jrcodeza.schema.v2.generator.util.CommonConstants.FILE_COMPONENT_NAME;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.uncapitalize;
 
 public class OperationsTransformer extends OpenApiTransformer {
 
@@ -83,8 +86,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 	private static final List<Class<?>> OPERATION_ANNOTATIONS = asList(RequestMapping.class, PostMapping.class, GetMapping.class, PutMapping.class,
 																	   PatchMapping.class, DeleteMapping.class);
-
-	private final Set<String> operationIds = new HashSet<>();
 
 	private final GenerationContext generationContext;
 	private final List<OperationParameterInterceptor> operationParameterInterceptors;
@@ -106,7 +107,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 	public Map<String, Path> transformOperations(List<Class<?>> restControllerClasses, OpenApiV2GeneratorConfig config) {
 		super.openApiV2GeneratorConfig.set(config);
-		operationIds.clear();
 		final Map<String, Path> operationsMap = new HashMap<>();
 
 		for (Class<?> clazz : restControllerClasses) {
@@ -383,7 +383,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		}
 
 		if (isHttpMethodWithRequestBody(httpMethod)) {
-			BodyParameter requestBody = createRequestBody(method, getFirstFromArray(consumes));
+			io.swagger.models.parameters.Parameter requestBody = createRequestBody(method, getFirstFromArray(consumes));
 			if (requestBody != null) {
 				operation.getParameters().add(requestBody);
 			}
@@ -500,7 +500,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 					 .orElse(null);
 	}
 
-	private BodyParameter createRequestBody(Method method, String userDefinedContentType) {
+	private io.swagger.models.parameters.Parameter createRequestBody(Method method, String userDefinedContentType) {
 		ParameterNamePair requestBodyParameter = getRequestBody(method);
 
 		if (requestBodyParameter == null) {
@@ -512,24 +512,73 @@ public class OperationsTransformer extends OpenApiTransformer {
 		}
 
 		ModelImpl content = new ModelImpl();
-		content.addProperty(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()),
-							createMediaType(
-									requestBodyParameter.getParameter().getType(),
-									requestBodyParameter.getName(),
-									singletonList(getGenericParam(requestBodyParameter.getParameter()))
-							));
+		Property property = createMediaType(
+				requestBodyParameter.getParameter().getType(),
+				requestBodyParameter.getName(),
+				singletonList(getGenericParam(requestBodyParameter.getParameter()))
+		);
+		content.addProperty(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()), property);
 
+		OpenApiV2GeneratorConfig config = openApiV2GeneratorConfig.get();
+		return config.getCompatibilityMode() == CompatibilityMode.NSWAG
+				? createNswagRequestBody(requestBodyParameter, property)
+				: createStandardRequestBody(method, requestBodyParameter, content, property);
+	}
+
+	private io.swagger.models.parameters.Parameter createStandardRequestBody(Method method, ParameterNamePair requestBodyParameter, ModelImpl content,
+																			 Property property) {
 		BodyParameter requestBody = new BodyParameter();
-		requestBody.setRequired(true);
 		requestBody.setSchema(content);
-		requestBody.setDescription("requestBody");
-		requestBody.setName(requestBodyParameter.getName());
+		requestBody.setRequired(true);
+		requestBody.setName(resolveRequestBodyName(property, requestBodyParameter.getName()));
+		requestBody.setDescription(requestBody.getName());
 
 		requestBodyInterceptors.forEach(interceptor ->
 												interceptor.intercept(method, requestBodyParameter.getParameter(), requestBodyParameter.getName(), requestBody)
 		);
 
 		return requestBody;
+	}
+
+	private io.swagger.models.parameters.Parameter createNswagRequestBody(ParameterNamePair requestBodyParameter, Property property) {
+		CustomBodyParameter requestBody = new CustomBodyParameter();
+
+		if (property instanceof RefProperty) {
+			CustomSchema customSchema = new CustomSchema();
+			customSchema.setRef(((RefProperty) property).get$ref());
+			requestBody.setSchema(customSchema);
+		} else if (isFile(property)) {
+			CustomSchema customSchema = new CustomSchema();
+			customSchema.setRef(CommonConstants.COMPONENT_REF_PREFIX + FILE_COMPONENT_NAME);
+			requestBody.setSchema(customSchema);
+		} else if (property instanceof ArrayProperty) {
+			requestBody.setType("array");
+			requestBody.setItems(((ArrayProperty) property).getItems());
+		}
+
+		requestBody.setRequired(true);
+		requestBody.setName(resolveRequestBodyName(property, requestBodyParameter.getName()));
+		requestBody.setDescription(requestBody.getName());
+
+		return requestBody;
+	}
+
+	private boolean isFile(Property property) {
+		if (property instanceof ObjectProperty) {
+			ObjectProperty objectProperty = (ObjectProperty) property;
+			if (objectProperty.getProperties() != null && !objectProperty.getProperties().isEmpty()) {
+				return objectProperty.getProperties().entrySet().iterator().next().getValue() instanceof FileProperty;
+			}
+		}
+		return false;
+	}
+
+	private String resolveRequestBodyName(Property property, String name) {
+		if (property instanceof RefProperty && StringUtils.isNotBlank(((RefProperty) property).get$ref())) {
+			String ref = ((RefProperty) property).get$ref();
+			return uncapitalize(ref.replaceFirst(CommonConstants.COMPONENT_REF_PREFIX, "")) + "Body";
+		}
+		return name;
 	}
 
 	private Class<?> getGenericParam(Parameter parameter) {

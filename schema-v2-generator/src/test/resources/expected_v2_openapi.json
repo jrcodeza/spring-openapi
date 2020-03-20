@@ -31,7 +31,7 @@
           {
             "in": "body",
             "name": "multipartFile",
-            "description": "requestBody. Test requestBody interceptor",
+            "description": "multipartFile. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -259,8 +259,8 @@
           },
           {
             "in": "body",
-            "name": "testBody",
-            "description": "requestBody. Test requestBody interceptor",
+            "name": "validationDummyBody",
+            "description": "validationDummyBody. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -394,8 +394,8 @@
           },
           {
             "in": "body",
-            "name": "car",
-            "description": "requestBody. Test requestBody interceptor",
+            "name": "carBody",
+            "description": "carBody. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -532,7 +532,7 @@
           {
             "in": "body",
             "name": "documentFile",
-            "description": "requestBody. Test requestBody interceptor",
+            "description": "documentFile. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -615,7 +615,7 @@
           {
             "in": "body",
             "name": "validationDummies",
-            "description": "requestBody. Test requestBody interceptor",
+            "description": "validationDummies. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -656,8 +656,8 @@
           },
           {
             "in": "body",
-            "name": "validationDummy",
-            "description": "requestBody. Test requestBody interceptor",
+            "name": "validationDummyBody",
+            "description": "validationDummyBody. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -732,8 +732,8 @@
           },
           {
             "in": "body",
-            "name": "validationDummy",
-            "description": "requestBody. Test requestBody interceptor",
+            "name": "validationDummyBody",
+            "description": "validationDummyBody. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -854,8 +854,8 @@
           },
           {
             "in": "body",
-            "name": "validationDummy",
-            "description": "requestBody. Test requestBody interceptor",
+            "name": "validationDummyBody",
+            "description": "validationDummyBody. Test requestBody interceptor",
             "required": true,
             "schema": {
               "properties": {
@@ -1189,6 +1189,10 @@
         }
       },
       "description": ". Test schema interceptors"
+    },
+    "ApiFile": {
+      "type": "string",
+      "format": "binary"
     },
     "CustomerInventory": {
       "type": "object",

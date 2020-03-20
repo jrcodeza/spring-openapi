@@ -1,4 +1,4 @@
-package com.github.jrcodeza.schema.v2.generator.model.dummy;
+package com.github.jrcodeza.schema.v2.generator.domain.dummy;
 
 import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;

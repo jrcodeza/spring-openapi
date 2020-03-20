@@ -1,4 +1,4 @@
-package com.github.jrcodeza.schema.v2.generator.model;
+package com.github.jrcodeza.schema.v2.generator.domain;
 
 public class Van extends Car {
 

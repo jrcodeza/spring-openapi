@@ -31,20 +31,10 @@
           {
             "in": "body",
             "name": "multipartFile",
-            "description": "multipartFile. Test requestBody interceptor",
+            "description": "multipartFile",
             "required": true,
             "schema": {
-              "properties": {
-                "multipart/form-data": {
-                  "type": "object",
-                  "properties": {
-                    "multipartFile": {
-                      "type": "string",
-                      "format": "binary"
-                    }
-                  }
-                }
-              }
+              "$ref": "#/definitions/ApiFile"
             }
           }
         ],
@@ -260,14 +250,10 @@
           {
             "in": "body",
             "name": "validationDummyBody",
-            "description": "validationDummyBody. Test requestBody interceptor",
+            "description": "validationDummyBody",
             "required": true,
             "schema": {
-              "properties": {
-                "application/json": {
-                  "$ref": "#/definitions/ValidationDummy"
-                }
-              }
+              "$ref": "#/definitions/ValidationDummy"
             }
           }
         ],
@@ -395,14 +381,10 @@
           {
             "in": "body",
             "name": "carBody",
-            "description": "carBody. Test requestBody interceptor",
+            "description": "carBody",
             "required": true,
             "schema": {
-              "properties": {
-                "application/json": {
-                  "$ref": "#/definitions/Car"
-                }
-              }
+              "$ref": "#/definitions/Car"
             }
           }
         ],
@@ -532,20 +514,10 @@
           {
             "in": "body",
             "name": "documentFile",
-            "description": "documentFile. Test requestBody interceptor",
+            "description": "documentFile",
             "required": true,
             "schema": {
-              "properties": {
-                "multipart/form-data": {
-                  "type": "object",
-                  "properties": {
-                    "documentFile": {
-                      "type": "string",
-                      "format": "binary"
-                    }
-                  }
-                }
-              }
+              "$ref": "#/definitions/ApiFile"
             }
           }
         ],
@@ -579,12 +551,7 @@
             "in": "query",
             "description": ". Interceptor OperationParameter test",
             "required": true,
-            "type": "string",
-            "enum": [
-              "PERSONAL",
-              "TRUCK",
-              "VAN"
-            ]
+            "$ref": "#/definitions/CarType"
           }
         ],
         "responses": {
@@ -615,17 +582,11 @@
           {
             "in": "body",
             "name": "validationDummies",
-            "description": "validationDummies. Test requestBody interceptor",
+            "description": "validationDummies",
             "required": true,
-            "schema": {
-              "properties": {
-                "application/json": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/ValidationDummy"
-                  }
-                }
-              }
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ValidationDummy"
             }
           }
         ],
@@ -657,14 +618,10 @@
           {
             "in": "body",
             "name": "validationDummyBody",
-            "description": "validationDummyBody. Test requestBody interceptor",
+            "description": "validationDummyBody",
             "required": true,
             "schema": {
-              "properties": {
-                "application/json": {
-                  "$ref": "#/definitions/ValidationDummy"
-                }
-              }
+              "$ref": "#/definitions/ValidationDummy"
             }
           }
         ],
@@ -733,14 +690,10 @@
           {
             "in": "body",
             "name": "validationDummyBody",
-            "description": "validationDummyBody. Test requestBody interceptor",
+            "description": "validationDummyBody",
             "required": true,
             "schema": {
-              "properties": {
-                "application/json": {
-                  "$ref": "#/definitions/ValidationDummy"
-                }
-              }
+              "$ref": "#/definitions/ValidationDummy"
             }
           }
         ],
@@ -855,14 +808,10 @@
           {
             "in": "body",
             "name": "validationDummyBody",
-            "description": "validationDummyBody. Test requestBody interceptor",
+            "description": "validationDummyBody",
             "required": true,
             "schema": {
-              "properties": {
-                "application/json": {
-                  "$ref": "#/definitions/ValidationDummy"
-                }
-              }
+              "$ref": "#/definitions/ValidationDummy"
             }
           }
         ],

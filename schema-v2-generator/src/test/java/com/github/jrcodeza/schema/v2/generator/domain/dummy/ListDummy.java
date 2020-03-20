@@ -1,11 +1,11 @@
-package com.github.jrcodeza.schema.v2.generator.model.dummy;
+package com.github.jrcodeza.schema.v2.generator.domain.dummy;
 
 import javax.validation.constraints.Size;
 import java.util.List;
 
-import com.github.jrcodeza.schema.v2.generator.model.Car;
-import com.github.jrcodeza.schema.v2.generator.model.CarType;
-import com.github.jrcodeza.schema.v2.generator.model.Product;
+import com.github.jrcodeza.schema.v2.generator.domain.Car;
+import com.github.jrcodeza.schema.v2.generator.domain.CarType;
+import com.github.jrcodeza.schema.v2.generator.domain.Product;
 
 public class ListDummy {
 

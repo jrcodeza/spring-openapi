@@ -1,7 +1,7 @@
-package com.github.jrcodeza.schema.v2.generator.model.dummy;
+package com.github.jrcodeza.schema.v2.generator.domain.dummy;
 
-import com.github.jrcodeza.schema.v2.generator.model.Car;
-import com.github.jrcodeza.schema.v2.generator.model.Product;
+import com.github.jrcodeza.schema.v2.generator.domain.Car;
+import com.github.jrcodeza.schema.v2.generator.domain.Product;
 
 public class ArrayDummy {
 

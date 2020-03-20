@@ -1,5 +1,33 @@
 package com.github.jrcodeza.schema.v2.generator;
 
+import java.lang.annotation.Annotation;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Stream;
+
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+
+import com.github.jrcodeza.schema.v2.generator.config.CompatibilityMode;
+import com.github.jrcodeza.schema.v2.generator.config.OpenApiV2GeneratorConfig;
+import com.github.jrcodeza.schema.v2.generator.model.CustomQueryParameter;
+import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
+import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.swagger.models.ModelImpl;
 import io.swagger.models.parameters.AbstractSerializableParameter;
 import io.swagger.models.properties.AbstractNumericProperty;
@@ -15,29 +43,6 @@ import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.StringProperty;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.validation.constraints.DecimalMax;
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
-import java.lang.annotation.Annotation;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Stream;
-
-import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
-import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -46,6 +51,7 @@ import static java.util.stream.Collectors.toList;
 public abstract class OpenApiTransformer {
 
 	private static Logger logger = LoggerFactory.getLogger(OpenApiTransformer.class);
+	protected final ThreadLocal<OpenApiV2GeneratorConfig> openApiV2GeneratorConfig = new ThreadLocal<>();
 
 	protected abstract Property createRefProperty(Class<?> typeSignature, GenerationContext generationContext);
 
@@ -91,12 +97,34 @@ public abstract class OpenApiTransformer {
 		} else if (LocalDateTime.class.equals(type) || LocalTime.class.equals(type)) {
 			oasParameter.setProperty(new DateTimeProperty());
 		}  else if (type.isEnum()) {
-			oasParameter.setType("string");
-			oasParameter.setEnumValue(asList(type.getEnumConstants()));
+			mapEnum(oasParameter, type);
 		} else {
 			oasParameter.setProperty(createRefProperty(type, null));
 		}
 		asList(annotations).forEach(annotation -> applyAnnotationDetailsOnParameter(oasParameter, annotation));
+	}
+
+	private void mapEnum(AbstractSerializableParameter<?> oasParameter, Class<?> type) {
+		if (isNswagCompatibilityMode()) {
+			oasParameter.setType(null);
+			setRef(oasParameter, type);
+		} else {
+			oasParameter.setType("string");
+			oasParameter.setEnumValue(asList(type.getEnumConstants()));
+		}
+	}
+
+	private void setRef(AbstractSerializableParameter<?> oasParameter, Class<?> type) {
+		if (oasParameter instanceof CustomQueryParameter) {
+			((CustomQueryParameter) oasParameter).setRef(CommonConstants.COMPONENT_REF_PREFIX + type.getSimpleName());
+		}
+	}
+
+	private boolean isNswagCompatibilityMode() {
+		if (openApiV2GeneratorConfig.get() == null) {
+			return false;
+		}
+		return openApiV2GeneratorConfig.get().getCompatibilityMode() == CompatibilityMode.NSWAG;
 	}
 
 	@SuppressWarnings("squid:S3776") // no other solution

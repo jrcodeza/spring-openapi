@@ -1,7 +1,9 @@
 package com.github.jrcodeza.schema.v2.generator;
 
+import io.swagger.models.ComposedModel;
 import io.swagger.models.Info;
 import io.swagger.models.Model;
+import io.swagger.models.ModelImpl;
 import io.swagger.models.Path;
 import io.swagger.models.Swagger;
 import org.slf4j.Logger;
@@ -28,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jrcodeza.OpenApiIgnore;
+import com.github.jrcodeza.schema.v2.generator.config.OpenApiV2GeneratorConfig;
+import com.github.jrcodeza.schema.v2.generator.config.builder.OpenApiV2GeneratorConfigBuilder;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.v2.generator.interceptors.RequestBodyInterceptor;
@@ -36,6 +40,7 @@ import com.github.jrcodeza.schema.v2.generator.interceptors.SchemaInterceptor;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.model.Header;
 import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
+import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
@@ -92,7 +97,11 @@ public class OpenAPIV2Generator {
 	}
 
 	public String generateJson() throws JsonProcessingException {
-		Swagger openAPI = generate();
+		return generateJson(OpenApiV2GeneratorConfigBuilder.empty().build());
+	}
+
+	public String generateJson(OpenApiV2GeneratorConfig config) throws JsonProcessingException {
+		Swagger openAPI = generate(config);
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		DocumentContext doc = JsonPath.parse(objectMapper.writeValueAsString(openAPI));
@@ -101,14 +110,18 @@ public class OpenAPIV2Generator {
 		return doc.jsonString();
 	}
 
-	public Swagger generate() {
+	public Swagger generate(OpenApiV2GeneratorConfig config) {
 		logger.info("Starting OpenAPI v2 generation");
 		Swagger openAPI = new Swagger();
 		openAPI.setDefinitions(createDefinitions());
-		openAPI.setPaths(createPaths());
+		openAPI.setPaths(createPaths(config));
 		openAPI.setInfo(info);
 		logger.info("OpenAPI v2 generation done!");
 		return openAPI;
+	}
+
+	public Swagger generate() {
+		return generate(OpenApiV2GeneratorConfigBuilder.empty().build());
 	}
 
 	public void addSchemaInterceptor(SchemaInterceptor schemaInterceptor) {
@@ -135,7 +148,7 @@ public class OpenAPIV2Generator {
 		globalHeaders.add(new Header(name, description, required));
 	}
 
-	private Map<String, Path> createPaths() {
+	private Map<String, Path> createPaths(OpenApiV2GeneratorConfig config) {
 		ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
 		scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
 
@@ -148,7 +161,7 @@ public class OpenAPIV2Generator {
 				controllerClasses.add(getClass(beanDefinition));
 			}
 		}
-		return operationsTransformer.transformOperations(controllerClasses);
+		return operationsTransformer.transformOperations(controllerClasses, config);
 	}
 
 	private Map<String, Model> createDefinitions() {
@@ -182,9 +195,16 @@ public class OpenAPIV2Generator {
 				schemaInterceptors.forEach(schemaInterceptor -> schemaInterceptor.intercept(clazz, transformedComponentSchema));
 				schemaMap.put(clazz.getSimpleName(), transformedComponentSchema);
 			}
-
 		}
+		schemaMap.put(CommonConstants.FILE_COMPONENT_NAME, createFileModel());
 		return schemaMap;
+	}
+
+	private Model createFileModel() {
+		ModelImpl model = new ModelImpl();
+		model.setType("string");
+		model.setFormat("binary");
+		return model;
 	}
 
 	private Class<?> getClass(BeanDefinition beanDefinition) {

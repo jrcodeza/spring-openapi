@@ -3,7 +3,8 @@ package com.github.jrcodeza.schema.v2.generator.config;
 public class OpenApiV2GeneratorConfig {
 
 	private CompatibilityMode compatibilityMode;
-	private String baseUrl;
+	private String basePath;
+	private String host;
 
 	public CompatibilityMode getCompatibilityMode() {
 		return compatibilityMode;
@@ -13,11 +14,19 @@ public class OpenApiV2GeneratorConfig {
 		this.compatibilityMode = compatibilityMode;
 	}
 
-	public String getBaseUrl() {
-		return baseUrl;
+	public String getBasePath() {
+		return basePath;
 	}
 
-	public void setBaseUrl(String baseUrl) {
-		this.baseUrl = baseUrl;
+	public void setBasePath(String basePath) {
+		this.basePath = basePath;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
 	}
 }

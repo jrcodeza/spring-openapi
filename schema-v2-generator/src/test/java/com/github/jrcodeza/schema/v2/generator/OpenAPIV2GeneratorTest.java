@@ -39,6 +39,8 @@ public class OpenAPIV2GeneratorTest {
 	public void generateStandardScenarioWithCustomConfig() throws JsonProcessingException {
 		String openAPIJson = createTestGenerator().generateJson(OpenApiV2GeneratorConfigBuilder.empty()
 				.withCompatibilityMode(CompatibilityMode.NSWAG)
+				.withBasePath("/test")
+				.withHost("test.com")
 				.build()
 		);
 		assertOpenApiResult(openAPIJson, "expected_v2_openapi_nswag.json");

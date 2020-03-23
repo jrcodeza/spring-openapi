@@ -116,7 +116,8 @@ public class OpenAPIV2Generator {
 		openAPI.setDefinitions(createDefinitions());
 		openAPI.setPaths(createPaths(config));
 		openAPI.setInfo(info);
-		openAPI.setBasePath(config.getBaseUrl());
+		openAPI.setBasePath(config.getBasePath());
+		openAPI.setHost(config.getHost());
 		logger.info("OpenAPI v2 generation done!");
 		return openAPI;
 	}

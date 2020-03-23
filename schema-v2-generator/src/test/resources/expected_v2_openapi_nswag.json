@@ -5,6 +5,8 @@
     "version": "1.0.0",
     "title": "Test API"
   },
+  "basePath": "/test",
+  "host": "test.com",
   "paths": {
     "/cars/{carId}/photos": {
       "post": {

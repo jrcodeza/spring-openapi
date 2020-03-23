@@ -1,16 +1,5 @@
 package com.github.jrcodeza.schema.generator;
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.jrcodeza.OpenApiIgnore;
@@ -25,11 +14,15 @@ import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.examples.OperationParameterExampleInterceptor;
-import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
-
-import com.sun.org.apache.xpath.internal.Arg;
+import com.github.jrcodeza.schema.generator.util.MediaTypeBuilder;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +32,16 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.RegexPatternTypeFilter;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.Schema;
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
@@ -73,6 +70,7 @@ public class OpenAPIGenerator {
     private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
 
     private final List<Header> globalHeaders;
+    private final MediaTypeBuilder mediaTypeBuilder;
 
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
         this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, null);
@@ -103,12 +101,12 @@ public class OpenAPIGenerator {
         this.operationParameterFilter = new AtomicReference<>(operationParameterFilter);
         this.schemaFieldFilter = new AtomicReference<>(schemaFieldFilter);
 
-        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter);
+        this.mediaTypeBuilder = new MediaTypeBuilder(removeRegexFormatFromPackages(modelPackages));
+        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter, mediaTypeBuilder);
         this.globalHeaders = new ArrayList<>();
 
-        GenerationContext operationsGenerationContext = new GenerationContext(null, removeRegexFormatFromPackages(modelPackages));
         this.operationsTransformer = new OperationsTransformer(
-                operationsGenerationContext, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders,
+                mediaTypeBuilder, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders,
                 this.operationFilter, this.operationParameterFilter);
 
         this.info = info;
@@ -181,6 +179,10 @@ public class OpenAPIGenerator {
         this.schemaFieldFilter.set(schemaFieldFilter);
     }
 
+    public MediaTypeBuilder getMediaTypeBuilder() {
+        return mediaTypeBuilder;
+    }
+
     private <T, U extends T> void addInterceptor(List<T> interceptors, U interceptor) {
         if (interceptors.stream().noneMatch(o -> StringUtils.equalsIgnoreCase(o.getClass().getName(), interceptor.getClass().getName()))) {
             interceptors.add(interceptor);
@@ -241,8 +243,7 @@ public class OpenAPIGenerator {
                 if (schemaMap.containsKey(clazz.getSimpleName()) || clazz.getAnnotation(OpenApiIgnore.class) != null) {
                     continue;
                 }
-                GenerationContext generationContext = new GenerationContext(inheritanceMap, packagesWithoutRegex);
-                Schema<?> transformedComponentSchema = componentSchemaTransformer.transformSimpleSchema(clazz, generationContext);
+                Schema<?> transformedComponentSchema = componentSchemaTransformer.transformSimpleSchema(clazz, inheritanceMap);
                 schemaInterceptors.forEach(schemaInterceptor -> schemaInterceptor.intercept(clazz, transformedComponentSchema));
                 schemaMap.put(clazz.getSimpleName(), transformedComponentSchema);
             }

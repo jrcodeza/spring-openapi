@@ -1,22 +1,5 @@
 package com.github.jrcodeza.schema.generator;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
 import com.github.jrcodeza.schema.generator.filters.OperationFilter;
@@ -24,8 +7,16 @@ import com.github.jrcodeza.schema.generator.filters.OperationParameterFilter;
 import com.github.jrcodeza.schema.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
-import com.github.jrcodeza.schema.generator.model.GenerationContext;
-
+import com.github.jrcodeza.schema.generator.util.MediaTypeBuilder;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.headers.Header;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -33,8 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,16 +38,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.headers.Header;
-import io.swagger.v3.oas.models.media.ComposedSchema;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.parameters.RequestBody;
-import io.swagger.v3.oas.models.responses.ApiResponse;
-import io.swagger.v3.oas.models.responses.ApiResponses;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static com.github.jrcodeza.schema.generator.util.GeneratorUtils.shouldBeIgnored;
@@ -66,7 +60,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 
-public class OperationsTransformer extends OpenApiTransformer {
+public class OperationsTransformer {
 
 	private static final String DEFAULT_RESPONSE_STATUS = "200";
 	private static Logger logger = LoggerFactory.getLogger(OperationsTransformer.class);
@@ -79,7 +73,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private static final List<Class<?>> OPERATION_ANNOTATIONS = asList(RequestMapping.class, PostMapping.class, GetMapping.class, PutMapping.class,
 			PatchMapping.class, DeleteMapping.class);
 
-	private final GenerationContext generationContext;
+	private final MediaTypeBuilder mediaTypeBuilder;
 	private final List<OperationParameterInterceptor> operationParameterInterceptors;
 	private final List<OperationInterceptor> operationInterceptors;
 	private final List<RequestBodyInterceptor> requestBodyInterceptors;
@@ -88,14 +82,14 @@ public class OperationsTransformer extends OpenApiTransformer {
 	private final AtomicReference<OperationFilter> operationFilter;
 	private final AtomicReference<OperationParameterFilter> operationParameterFilter;
 
-	public OperationsTransformer(GenerationContext generationContext,
+	public OperationsTransformer(MediaTypeBuilder mediaTypeBuilder,
 								 List<OperationParameterInterceptor> operationParameterInterceptors,
 								 List<OperationInterceptor> operationInterceptors,
 								 List<RequestBodyInterceptor> requestBodyInterceptors,
 								 List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders,
 								 AtomicReference<OperationFilter> operationFilter,
 								 AtomicReference<OperationParameterFilter> operationParameterFilter) {
-		this.generationContext = generationContext;
+		this.mediaTypeBuilder = mediaTypeBuilder;
 		this.operationParameterInterceptors = operationParameterInterceptors;
 		this.operationInterceptors = operationInterceptors;
 		this.requestBodyInterceptors = requestBodyInterceptors;
@@ -237,7 +231,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		if (apiResponsesAnnotation == null) {
 			Class<?> methodReturnType = method.getReturnType();
-			MediaType mediaType = createMediaType(methodReturnType, null, getGenericParams(method));
+			MediaType mediaType = mediaTypeBuilder.createMediaType(methodReturnType, null, getGenericParams(method));
 
 			String responseStatusCode = resolveResponseStatus(method);
 			ApiResponse apiResponse = new ApiResponse();
@@ -501,7 +495,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 			return null;
 		}
 		oasParameter.setSchema(createSchemaFromParameter(parameter, parameterName));
-		enrichWithTypeAnnotations(oasParameter, parameter.getAnnotations());
+		mediaTypeBuilder.enrichWithTypeAnnotations(oasParameter, parameter.getAnnotations());
 		return oasParameter;
 	}
 
@@ -526,7 +520,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		Content content = new Content();
 		content.addMediaType(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()),
-				createMediaType(
+				mediaTypeBuilder.createMediaType(
 						requestBodyParameter.getParameter().getType(),
 						requestBodyParameter.getName(),
 						singletonList(getGenericParam(requestBodyParameter.getParameter()))
@@ -555,81 +549,31 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return null;
 	}
 
-	private MediaType createMediaType(Class<?> requestBodyParameter, String parameterName, List<Class<?>> genericParams) {
-		Schema<?> rootMediaSchema = new Schema<>();
-		if (isFile(requestBodyParameter)) {
-			Schema<?> fileSchema = new Schema<>();
-			fileSchema.setType("string");
-			fileSchema.setFormat("binary");
-
-			if (parameterName == null) {
-				rootMediaSchema = fileSchema;
-			} else {
-				Map<String, Schema> properties = new HashMap<>();
-				properties.put(parameterName, fileSchema);
-				rootMediaSchema.setType("object");
-				rootMediaSchema.setProperties(properties);
-			}
-		} else if (isList(requestBodyParameter, genericParams)) {
-			rootMediaSchema = parseArraySignature(getFirstOrNull(genericParams), null, new Annotation[]{});
-		} else if (!StringUtils.equalsIgnoreCase(requestBodyParameter.getSimpleName(), "void")) {
-			if (isInPackagesToBeScanned(requestBodyParameter, generationContext)) {
-				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + requestBodyParameter.getSimpleName());
-			} else if (requestBodyParameter.isAssignableFrom(ResponseEntity.class) && !CollectionUtils.isEmpty(genericParams)
-					&& !genericParams.get(0).isAssignableFrom(Void.class)) {
-				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + genericParams.get(0).getSimpleName());
-			} else {
-				return null;
-			}
-		} else {
-			return null;
-		}
-
-		MediaType mediaType = new MediaType();
-		mediaType.setSchema(rootMediaSchema);
-		return mediaType;
-	}
-
-	private Class<?> getFirstOrNull(List<Class<?>> genericParams) {
-		if (CollectionUtils.isEmpty(genericParams) || genericParams.get(0).isAssignableFrom(List.class)) {
-			return null;
-		}
-		return genericParams.get(0);
-	}
-
-	private boolean isList(Class<?> requestBodyParameter, List<Class<?>> genericTypes) {
-		Class<?> classToCheck = requestBodyParameter;
-		if (requestBodyParameter.isAssignableFrom(ResponseEntity.class) && !genericTypes.isEmpty()) {
-			classToCheck = genericTypes.get(genericTypes.size() - 1);
-		}
-		return classToCheck.isAssignableFrom(List.class);
-	}
-
 	private Schema createSchemaFromParameter(Parameter parameter, String parameterName) {
 		Schema schema;
 		Class<?> clazz = parameter.getType();
 		Annotation[] annotations = parameter.getAnnotations();
 
 		if (clazz.isPrimitive()) {
-			schema = parseBaseTypeSignature(clazz, annotations);
+			schema = mediaTypeBuilder.parseBaseTypeSignature(clazz, annotations);
 		} else if (clazz.isArray()) {
-			schema = parseArraySignature(clazz.getComponentType(), null, annotations);
+			schema = mediaTypeBuilder.parseArraySignature(clazz.getComponentType(), null, annotations);
 		} else if (clazz.isAssignableFrom(List.class)) {
 			if (parameter.getParameterizedType() instanceof ParameterizedType) {
 				Class<?> listGenericParameter = (Class<?>)((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
-				return parseArraySignature(listGenericParameter, null, annotations);
+				return mediaTypeBuilder.parseArraySignature(listGenericParameter, null, annotations);
 			}
 
 			throw new IllegalArgumentException(String.format("List [%s] not being parametrized type.", parameterName));
 		} else {
-			schema = parseClassRefTypeSignature(clazz, annotations, null);
+			schema = mediaTypeBuilder.parseClassRefTypeSignature(clazz, annotations, null);
 		}
 		return schema;
 	}
 
 	private String resolveContentType(String userDefinedContentType, Parameter requestBody) {
 		if (StringUtils.isBlank(userDefinedContentType)) {
-			return isFile(requestBody.getType()) ? MULTIPART_FORM_DATA_CONTENT_TYPE : DEFAULT_CONTENT_TYPE;
+			return mediaTypeBuilder.isFile(requestBody.getType()) ? MULTIPART_FORM_DATA_CONTENT_TYPE : DEFAULT_CONTENT_TYPE;
 		}
 		return userDefinedContentType;
 	}
@@ -645,15 +589,11 @@ public class OperationsTransformer extends OpenApiTransformer {
 		}
 		for (int i = 0; i < parameters.length; i++) {
 			Parameter actualParameter = parameters[i];
-			if (isFile(actualParameter.getType())) {
+			if (mediaTypeBuilder.isFile(actualParameter.getType())) {
 				return new ParameterNamePair(parameterNames[i], actualParameter);
 			}
 		}
 		return null;
-	}
-
-	private boolean isFile(Class<?> parameter) {
-		return parameter.isAssignableFrom(MultipartFile.class);
 	}
 
 	private String getOperationId(String nameFromAnnotation, Method method, HttpMethod httpMethod) {
@@ -715,18 +655,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 			return "/";
 		}
 		return requestMapping.value().length > 0 ? getFirstFromArray(requestMapping.value()) : getFirstFromArray(requestMapping.path());
-	}
-
-	@Override
-	protected ComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
-		ComposedSchema composedSchema = new ComposedSchema();
-		composedSchema.set$ref(COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
-		return composedSchema;
-	}
-
-	@Override
-	protected Schema createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
-		return parseArraySignature(typeSignature, null, annotations);
 	}
 
 	public String getFirstFromArray(String[] strings) {

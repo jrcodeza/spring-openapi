@@ -237,7 +237,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 		if (apiResponsesAnnotation == null) {
 			Class<?> methodReturnType = method.getReturnType();
-			MediaType mediaType = createMediaType(methodReturnType, null, getGenericParams(method));
+			MediaType mediaType = createMediaType(methodReturnType, null, getGenericParams(method), generationContext.getModelPackages());
 
 			String responseStatusCode = resolveResponseStatus(method);
 			ApiResponse apiResponse = new ApiResponse();
@@ -529,7 +529,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 				createMediaType(
 						requestBodyParameter.getParameter().getType(),
 						requestBodyParameter.getName(),
-						singletonList(getGenericParam(requestBodyParameter.getParameter()))
+						singletonList(getGenericParam(requestBodyParameter.getParameter())),
+						generationContext.getModelPackages()
 				)
 		);
 
@@ -555,7 +556,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		return null;
 	}
 
-	private MediaType createMediaType(Class<?> requestBodyParameter, String parameterName, List<Class<?>> genericParams) {
+	private MediaType createMediaType(Class<?> requestBodyParameter, String parameterName, List<Class<?>> genericParams, List<String> modelPackages) {
 		Schema<?> rootMediaSchema = new Schema<>();
 		if (isFile(requestBodyParameter)) {
 			Schema<?> fileSchema = new Schema<>();
@@ -573,7 +574,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		} else if (isList(requestBodyParameter, genericParams)) {
 			rootMediaSchema = parseArraySignature(getFirstOrNull(genericParams), null, new Annotation[]{});
 		} else if (!StringUtils.equalsIgnoreCase(requestBodyParameter.getSimpleName(), "void")) {
-			if (isInPackagesToBeScanned(requestBodyParameter, generationContext)) {
+			if (isInPackagesToBeScanned(requestBodyParameter, modelPackages)) {
 				rootMediaSchema.set$ref(COMPONENT_REF_PREFIX + requestBodyParameter.getSimpleName());
 			} else if (requestBodyParameter.isAssignableFrom(ResponseEntity.class) && !CollectionUtils.isEmpty(genericParams)
 					&& !genericParams.get(0).isAssignableFrom(Void.class)) {

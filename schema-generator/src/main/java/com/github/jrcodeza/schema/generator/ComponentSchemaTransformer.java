@@ -98,7 +98,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     }
 
     private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass, Class<?> actualClass) {
-        if (!isInPackagesToBeScanned(superclass, generationContext)) {
+        if (!isInPackagesToBeScanned(superclass, generationContext.getModelPackages())) {
             // adding properties from parent classes is present due to swagger ui bug, after using different ui
             // this becomes relevant only for third party packages
             List<String> requiredFields = new ArrayList<>();
@@ -213,7 +213,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
     @Override
     protected CustomComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
         CustomComposedSchema schema = new CustomComposedSchema();
-        if (isInPackagesToBeScanned(typeSignature, generationContext)) {
+        if (isInPackagesToBeScanned(typeSignature, generationContext.getModelPackages())) {
             schema.set$ref(COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
             return schema;
         }

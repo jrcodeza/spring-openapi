@@ -1,27 +1,12 @@
 package com.github.jrcodeza.schema.generator;
 
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.ComposedSchema;
-import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
-import io.swagger.v3.oas.models.parameters.Parameter;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.validation.constraints.DecimalMax;
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +14,26 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+
 import com.github.jrcodeza.schema.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static java.lang.String.format;
@@ -94,13 +97,15 @@ public abstract class OpenApiTransformer {
 		}
 		enrichWithTypeAnnotations(arraySchema, annotations);
 		Stream.of(annotations).forEach(annotation -> applyArrayAnnotations(arraySchema, annotation));
+		List<String> modelPackages = generationContext == null ? new ArrayList<>() : generationContext.getModelPackages();
 		if (elementTypeSignature.isPrimitive()) {
 			// primitive type like int
 			Schema<?> itemSchema = new Schema<>();
 			itemSchema.setType(mapBaseType(elementTypeSignature));
 			arraySchema.setItems(itemSchema);
 			return arraySchema;
-		} else if (isInPackagesToBeScanned(elementTypeSignature, generationContext) || elementTypeSignature.getPackage().getName().startsWith("java.lang")) {
+		} else if (isInPackagesToBeScanned(elementTypeSignature, modelPackages)
+						|| elementTypeSignature.getPackage().getName().startsWith("java.lang")) {
 			String basicLangItemsType = mapBasicLangItemsType(elementTypeSignature);
 			// basic types like Integer or String
 			if (basicLangItemsType != null) {
@@ -234,9 +239,8 @@ public abstract class OpenApiTransformer {
 		throw new IllegalArgumentException(format("Unsupported base type=[%s]", elementTypeSignature.getSimpleName()));
 	}
 
-	protected boolean isInPackagesToBeScanned(Class<?> clazz, GenerationContext generationContext) {
-		return generationContext == null || generationContext.getModelPackages() == null
-				|| generationContext.getModelPackages().stream().anyMatch(pkg -> clazz.getPackage().getName().startsWith(pkg));
+	protected boolean isInPackagesToBeScanned(Class<?> clazz, List<String> modelPackages) {
+		return modelPackages == null || modelPackages.stream().anyMatch(pkg -> clazz.getPackage().getName().startsWith(pkg));
 	}
 
 	protected void enrichWithTypeAnnotations(Schema<?> schema, Annotation[] annotations) {

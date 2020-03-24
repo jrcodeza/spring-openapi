@@ -4,7 +4,7 @@ import com.github.jrcodeza.schema.generator.filters.SchemaFieldFilter;
 import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
-import com.github.jrcodeza.schema.generator.util.MediaTypeBuilder;
+import com.github.jrcodeza.schema.generator.util.SchemaGeneratorHelper;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -34,26 +34,26 @@ public class ComponentSchemaTransformer {
 
     private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
     private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
-    private final MediaTypeBuilder mediaTypeBuilder;
+    private final SchemaGeneratorHelper schemaGeneratorHelper;
 
     public ComponentSchemaTransformer(List<SchemaFieldInterceptor> schemaFieldInterceptors,
                                       AtomicReference<SchemaFieldFilter> schemaFieldFilter,
-                                      MediaTypeBuilder mediaTypeBuilder) {
+                                      SchemaGeneratorHelper schemaGeneratorHelper) {
         this.schemaFieldInterceptors = schemaFieldInterceptors;
         this.schemaFieldFilter = schemaFieldFilter;
-        this.mediaTypeBuilder = mediaTypeBuilder;
+        this.schemaGeneratorHelper = schemaGeneratorHelper;
     }
 
     public Schema transformSimpleSchema(Class<?> clazz, Map<String, InheritanceInfo> inheritanceMap) {
         if (clazz.isEnum()) {
-            return mediaTypeBuilder.createEnumSchema(clazz.getEnumConstants());
+            return schemaGeneratorHelper.createEnumSchema(clazz.getEnumConstants());
         }
         List<String> requiredFields = new ArrayList<>();
 
         Schema<?> schema = new Schema<>();
         schema.setType("object");
         schema.setProperties(getClassProperties(clazz, requiredFields));
-		mediaTypeBuilder.enrichWithTypeAnnotations(schema, clazz.getDeclaredAnnotations());
+		schemaGeneratorHelper.enrichWithTypeAnnotations(schema, clazz.getDeclaredAnnotations());
 
         updateRequiredFields(schema, requiredFields);
 
@@ -111,7 +111,7 @@ public class ComponentSchemaTransformer {
     }
 
     private Schema<?> traverseAndAddProperties(Schema<?> schema, Map<String, InheritanceInfo> inheritanceMap, Class<?> superclass, Class<?> actualClass) {
-        if (!mediaTypeBuilder.isInPackagesToBeScanned(superclass)) {
+        if (!schemaGeneratorHelper.isInPackagesToBeScanned(superclass)) {
             // adding properties from parent classes is present due to swagger ui bug, after using different ui
             // this becomes relevant only for third party packages
             List<String> requiredFields = new ArrayList<>();
@@ -176,7 +176,7 @@ public class ComponentSchemaTransformer {
         } else if (typeSignature.isAssignableFrom(List.class)) {
             if (field.getGenericType() instanceof ParameterizedType) {
                 Class<?> listGenericParameter = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-                return Optional.of(mediaTypeBuilder.parseArraySignature(listGenericParameter, annotations));
+                return Optional.of(schemaGeneratorHelper.parseArraySignature(listGenericParameter, annotations));
             }
             return Optional.empty();
         } else {
@@ -193,15 +193,15 @@ public class ComponentSchemaTransformer {
     }
 
     private Optional<Schema> createClassRefSchema(Class<?> typeClass, Annotation[] annotations) {
-        Schema<?> schema = mediaTypeBuilder.parseClassRefTypeSignature(typeClass, annotations);
-        mediaTypeBuilder.enrichWithTypeAnnotations(schema, annotations);
+        Schema<?> schema = schemaGeneratorHelper.parseClassRefTypeSignature(typeClass, annotations);
+        schemaGeneratorHelper.enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
     private Optional<Schema> createArrayTypeSchema(Class<?> typeSignature, Annotation[] annotations) {
         Class<?> arrayComponentType = typeSignature.getComponentType();
-        Schema<?> schema = mediaTypeBuilder.parseArraySignature(arrayComponentType, annotations);
-        mediaTypeBuilder.enrichWithTypeAnnotations(schema, annotations);
+        Schema<?> schema = schemaGeneratorHelper.parseArraySignature(arrayComponentType, annotations);
+        schemaGeneratorHelper.enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
@@ -209,8 +209,8 @@ public class ComponentSchemaTransformer {
         if (!requiredFields.contains(field.getName())) {
             requiredFields.add(field.getName());
         }
-        Schema<?> schema = mediaTypeBuilder.parseBaseTypeSignature(field.getType(), annotations);
-        mediaTypeBuilder.enrichWithTypeAnnotations(schema, annotations);
+        Schema<?> schema = schemaGeneratorHelper.parseBaseTypeSignature(field.getType(), annotations);
+        schemaGeneratorHelper.enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 

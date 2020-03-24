@@ -37,12 +37,12 @@ import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONEN
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
-public class MediaTypeBuilder {
-    private static Logger logger = LoggerFactory.getLogger(MediaTypeBuilder.class);
+public class SchemaGeneratorHelper {
+    private static Logger logger = LoggerFactory.getLogger(SchemaGeneratorHelper.class);
 
     private final List<String> modelPackages;
 
-    public MediaTypeBuilder(List<String> modelPackages) {
+    public SchemaGeneratorHelper(List<String> modelPackages) {
         this.modelPackages = modelPackages;
     }
 

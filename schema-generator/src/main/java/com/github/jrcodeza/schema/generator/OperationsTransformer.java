@@ -7,7 +7,7 @@ import com.github.jrcodeza.schema.generator.filters.OperationParameterFilter;
 import com.github.jrcodeza.schema.generator.interceptors.OperationInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.OperationParameterInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.RequestBodyInterceptor;
-import com.github.jrcodeza.schema.generator.util.MediaTypeBuilder;
+import com.github.jrcodeza.schema.generator.util.SchemaGeneratorHelper;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.headers.Header;
@@ -73,7 +73,7 @@ public class OperationsTransformer {
 	private static final List<Class<?>> OPERATION_ANNOTATIONS = asList(RequestMapping.class, PostMapping.class, GetMapping.class, PutMapping.class,
 			PatchMapping.class, DeleteMapping.class);
 
-	private final MediaTypeBuilder mediaTypeBuilder;
+	private final SchemaGeneratorHelper schemaGeneratorHelper;
 	private final List<OperationParameterInterceptor> operationParameterInterceptors;
 	private final List<OperationInterceptor> operationInterceptors;
 	private final List<RequestBodyInterceptor> requestBodyInterceptors;
@@ -82,14 +82,14 @@ public class OperationsTransformer {
 	private final AtomicReference<OperationFilter> operationFilter;
 	private final AtomicReference<OperationParameterFilter> operationParameterFilter;
 
-	public OperationsTransformer(MediaTypeBuilder mediaTypeBuilder,
+	public OperationsTransformer(SchemaGeneratorHelper schemaGeneratorHelper,
 								 List<OperationParameterInterceptor> operationParameterInterceptors,
 								 List<OperationInterceptor> operationInterceptors,
 								 List<RequestBodyInterceptor> requestBodyInterceptors,
 								 List<com.github.jrcodeza.schema.generator.model.Header> globalHeaders,
 								 AtomicReference<OperationFilter> operationFilter,
 								 AtomicReference<OperationParameterFilter> operationParameterFilter) {
-		this.mediaTypeBuilder = mediaTypeBuilder;
+		this.schemaGeneratorHelper = schemaGeneratorHelper;
 		this.operationParameterInterceptors = operationParameterInterceptors;
 		this.operationInterceptors = operationInterceptors;
 		this.requestBodyInterceptors = requestBodyInterceptors;
@@ -231,7 +231,7 @@ public class OperationsTransformer {
 
 		if (apiResponsesAnnotation == null) {
 			Class<?> methodReturnType = method.getReturnType();
-			MediaType mediaType = mediaTypeBuilder.createMediaType(methodReturnType, null, getGenericParams(method));
+			MediaType mediaType = schemaGeneratorHelper.createMediaType(methodReturnType, null, getGenericParams(method));
 
 			String responseStatusCode = resolveResponseStatus(method);
 			ApiResponse apiResponse = new ApiResponse();
@@ -495,7 +495,7 @@ public class OperationsTransformer {
 			return null;
 		}
 		oasParameter.setSchema(createSchemaFromParameter(parameter, parameterName));
-		mediaTypeBuilder.enrichWithTypeAnnotations(oasParameter, parameter.getAnnotations());
+		schemaGeneratorHelper.enrichWithTypeAnnotations(oasParameter, parameter.getAnnotations());
 		return oasParameter;
 	}
 
@@ -520,7 +520,7 @@ public class OperationsTransformer {
 
 		Content content = new Content();
 		content.addMediaType(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()),
-				mediaTypeBuilder.createMediaType(
+				schemaGeneratorHelper.createMediaType(
 						requestBodyParameter.getParameter().getType(),
 						requestBodyParameter.getName(),
 						singletonList(getGenericParam(requestBodyParameter.getParameter()))
@@ -555,25 +555,25 @@ public class OperationsTransformer {
 		Annotation[] annotations = parameter.getAnnotations();
 
 		if (clazz.isPrimitive()) {
-			schema = mediaTypeBuilder.parseBaseTypeSignature(clazz, annotations);
+			schema = schemaGeneratorHelper.parseBaseTypeSignature(clazz, annotations);
 		} else if (clazz.isArray()) {
-			schema = mediaTypeBuilder.parseArraySignature(clazz.getComponentType(), null, annotations);
+			schema = schemaGeneratorHelper.parseArraySignature(clazz.getComponentType(), null, annotations);
 		} else if (clazz.isAssignableFrom(List.class)) {
 			if (parameter.getParameterizedType() instanceof ParameterizedType) {
 				Class<?> listGenericParameter = (Class<?>)((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
-				return mediaTypeBuilder.parseArraySignature(listGenericParameter, null, annotations);
+				return schemaGeneratorHelper.parseArraySignature(listGenericParameter, null, annotations);
 			}
 
 			throw new IllegalArgumentException(String.format("List [%s] not being parametrized type.", parameterName));
 		} else {
-			schema = mediaTypeBuilder.parseClassRefTypeSignature(clazz, annotations, null);
+			schema = schemaGeneratorHelper.parseClassRefTypeSignature(clazz, annotations, null);
 		}
 		return schema;
 	}
 
 	private String resolveContentType(String userDefinedContentType, Parameter requestBody) {
 		if (StringUtils.isBlank(userDefinedContentType)) {
-			return mediaTypeBuilder.isFile(requestBody.getType()) ? MULTIPART_FORM_DATA_CONTENT_TYPE : DEFAULT_CONTENT_TYPE;
+			return schemaGeneratorHelper.isFile(requestBody.getType()) ? MULTIPART_FORM_DATA_CONTENT_TYPE : DEFAULT_CONTENT_TYPE;
 		}
 		return userDefinedContentType;
 	}
@@ -589,7 +589,7 @@ public class OperationsTransformer {
 		}
 		for (int i = 0; i < parameters.length; i++) {
 			Parameter actualParameter = parameters[i];
-			if (mediaTypeBuilder.isFile(actualParameter.getType())) {
+			if (schemaGeneratorHelper.isFile(actualParameter.getType())) {
 				return new ParameterNamePair(parameterNames[i], actualParameter);
 			}
 		}

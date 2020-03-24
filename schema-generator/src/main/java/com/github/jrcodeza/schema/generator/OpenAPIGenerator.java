@@ -16,7 +16,7 @@ import com.github.jrcodeza.schema.generator.interceptors.SchemaInterceptor;
 import com.github.jrcodeza.schema.generator.interceptors.examples.OperationParameterExampleInterceptor;
 import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
-import com.github.jrcodeza.schema.generator.util.MediaTypeBuilder;
+import com.github.jrcodeza.schema.generator.util.SchemaGeneratorHelper;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -70,7 +70,7 @@ public class OpenAPIGenerator {
     private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
 
     private final List<Header> globalHeaders;
-    private final MediaTypeBuilder mediaTypeBuilder;
+    private final SchemaGeneratorHelper schemaGeneratorHelper;
 
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
         this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, null);
@@ -101,12 +101,12 @@ public class OpenAPIGenerator {
         this.operationParameterFilter = new AtomicReference<>(operationParameterFilter);
         this.schemaFieldFilter = new AtomicReference<>(schemaFieldFilter);
 
-        this.mediaTypeBuilder = new MediaTypeBuilder(removeRegexFormatFromPackages(modelPackages));
-        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter, mediaTypeBuilder);
+        this.schemaGeneratorHelper = new SchemaGeneratorHelper(removeRegexFormatFromPackages(modelPackages));
+        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter, schemaGeneratorHelper);
         this.globalHeaders = new ArrayList<>();
 
         this.operationsTransformer = new OperationsTransformer(
-                mediaTypeBuilder, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders,
+                schemaGeneratorHelper, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders,
                 this.operationFilter, this.operationParameterFilter);
 
         this.info = info;
@@ -179,8 +179,8 @@ public class OpenAPIGenerator {
         this.schemaFieldFilter.set(schemaFieldFilter);
     }
 
-    public MediaTypeBuilder getMediaTypeBuilder() {
-        return mediaTypeBuilder;
+    public SchemaGeneratorHelper getSchemaGeneratorHelper() {
+        return schemaGeneratorHelper;
     }
 
     private <T, U extends T> void addInterceptor(List<T> interceptors, U interceptor) {

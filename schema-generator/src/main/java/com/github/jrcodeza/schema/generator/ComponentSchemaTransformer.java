@@ -1,5 +1,18 @@
 package com.github.jrcodeza.schema.generator;
 
+import com.github.jrcodeza.schema.generator.filters.SchemaFieldFilter;
+import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
+import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
+import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
+import com.github.jrcodeza.schema.generator.util.SchemaGeneratorHelper;
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.ReflectionUtils;
+
+import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -10,60 +23,60 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.validation.constraints.NotNull;
-
-import com.github.jrcodeza.schema.generator.filters.SchemaFieldFilter;
-import com.github.jrcodeza.schema.generator.interceptors.SchemaFieldInterceptor;
-import com.github.jrcodeza.schema.generator.model.CustomComposedSchema;
-import com.github.jrcodeza.schema.generator.model.GenerationContext;
-import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.ReflectionUtils;
-
-import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.ObjectSchema;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 
 import static com.github.jrcodeza.schema.generator.util.CommonConstants.COMPONENT_REF_PREFIX;
 import static com.github.jrcodeza.schema.generator.util.GeneratorUtils.shouldBeIgnored;
 
 
-public class ComponentSchemaTransformer extends OpenApiTransformer {
+public class ComponentSchemaTransformer {
 
     private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
     private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
+    private final SchemaGeneratorHelper schemaGeneratorHelper;
 
-    public ComponentSchemaTransformer(List<SchemaFieldInterceptor> schemaFieldInterceptors, AtomicReference<SchemaFieldFilter> schemaFieldFilter) {
+    public ComponentSchemaTransformer(List<SchemaFieldInterceptor> schemaFieldInterceptors,
+                                      AtomicReference<SchemaFieldFilter> schemaFieldFilter,
+                                      SchemaGeneratorHelper schemaGeneratorHelper) {
         this.schemaFieldInterceptors = schemaFieldInterceptors;
         this.schemaFieldFilter = schemaFieldFilter;
+        this.schemaGeneratorHelper = schemaGeneratorHelper;
     }
 
-    public Schema transformSimpleSchema(Class<?> clazz, GenerationContext generationContext) {
+    public Schema transformSimpleSchema(Class<?> clazz, Map<String, InheritanceInfo> inheritanceMap) {
         if (clazz.isEnum()) {
-            return createEnumSchema(clazz.getEnumConstants());
+            return schemaGeneratorHelper.createEnumSchema(clazz.getEnumConstants());
         }
         List<String> requiredFields = new ArrayList<>();
 
         Schema<?> schema = new Schema<>();
         schema.setType("object");
-        schema.setProperties(getClassProperties(clazz, generationContext, requiredFields));
-		enrichWithTypeAnnotations(schema, clazz.getDeclaredAnnotations());
+        schema.setProperties(getClassProperties(clazz, requiredFields));
+		schemaGeneratorHelper.enrichWithTypeAnnotations(schema, clazz.getDeclaredAnnotations());
 
         updateRequiredFields(schema, requiredFields);
 
-        if (generationContext.getInheritanceMap().containsKey(clazz.getName())) {
-            Discriminator discriminator = createDiscriminator(generationContext.getInheritanceMap().get(clazz.getName()));
+        if (inheritanceMap.containsKey(clazz.getName())) {
+            Discriminator discriminator = createDiscriminator(inheritanceMap.get(clazz.getName()));
             schema.setDiscriminator(discriminator);
             enrichWithDiscriminatorProperty(schema, discriminator);
         }
         if (clazz.getSuperclass() != null) {
-            return traverseAndAddProperties(schema, generationContext, clazz.getSuperclass(), clazz);
+            return traverseAndAddProperties(schema, inheritanceMap, clazz.getSuperclass(), clazz);
         }
         return schema;
+    }
+
+    private Discriminator createDiscriminator(InheritanceInfo inheritanceInfo) {
+        Map<String, String> discriminatorTypeMapping = inheritanceInfo.getDiscriminatorClassMap().entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+        Discriminator discriminator = new Discriminator();
+        discriminator.setPropertyName(inheritanceInfo.getDiscriminatorFieldName());
+        discriminator.setMapping(discriminatorTypeMapping);
+        return discriminator;
     }
 
     private void updateRequiredFields(Schema schema, List<String> requiredFields) {
@@ -97,15 +110,15 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         }
     }
 
-    private Schema<?> traverseAndAddProperties(Schema<?> schema, GenerationContext generationContext, Class<?> superclass, Class<?> actualClass) {
-        if (!isInPackagesToBeScanned(superclass, generationContext)) {
+    private Schema<?> traverseAndAddProperties(Schema<?> schema, Map<String, InheritanceInfo> inheritanceMap, Class<?> superclass, Class<?> actualClass) {
+        if (!schemaGeneratorHelper.isInPackagesToBeScanned(superclass)) {
             // adding properties from parent classes is present due to swagger ui bug, after using different ui
             // this becomes relevant only for third party packages
             List<String> requiredFields = new ArrayList<>();
-            schema.getProperties().putAll(getClassProperties(superclass, generationContext, requiredFields));
+            schema.getProperties().putAll(getClassProperties(superclass, requiredFields));
             updateRequiredFields(schema, requiredFields);
             if (superclass.getSuperclass() != null && !"java.lang".equals(superclass.getSuperclass().getPackage().getName())) {
-                return traverseAndAddProperties(schema, generationContext, superclass.getSuperclass(), superclass);
+                return traverseAndAddProperties(schema, inheritanceMap, superclass.getSuperclass(), superclass);
             }
             return schema;
         } else {
@@ -113,7 +126,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
             parentClassSchema.set$ref(COMPONENT_REF_PREFIX + superclass.getSimpleName());
 
             CustomComposedSchema composedSchema = new CustomComposedSchema();
-            enrichWithAdditionalProperties(composedSchema, generationContext.getInheritanceMap(), superclass.getName(), actualClass.getSimpleName());
+            enrichWithAdditionalProperties(composedSchema, inheritanceMap, superclass.getName(), actualClass.getSimpleName());
             composedSchema.setAllOf(Arrays.asList(parentClassSchema, schema));
             composedSchema.setDescription(schema.getDescription());
             return composedSchema;
@@ -130,10 +143,10 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         }
     }
 
-    private Map<String, Schema> getClassProperties(Class<?> clazz, GenerationContext generationContext, List<String> requiredFields) {
+    private Map<String, Schema> getClassProperties(Class<?> clazz, List<String> requiredFields) {
         Map<String, Schema> classPropertyMap = new HashMap<>();
         ReflectionUtils.doWithLocalFields(clazz,
-                field -> getFieldSchema(clazz, field, generationContext, requiredFields).ifPresent(schema -> {
+                field -> getFieldSchema(clazz, field, requiredFields).ifPresent(schema -> {
                     schemaFieldInterceptors.forEach(modelClassFieldInterceptor -> modelClassFieldInterceptor.intercept(clazz, field, schema));
                     classPropertyMap.put(field.getName(), schema);
                 })
@@ -141,7 +154,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         return classPropertyMap;
     }
 
-    private Optional<Schema> getFieldSchema(Class<?> clazz, Field field, GenerationContext generationContext, List<String> requiredFields) {
+    private Optional<Schema> getFieldSchema(Class<?> clazz, Field field, List<String> requiredFields) {
         if (shouldIgnoreField(clazz, field)) {
             return Optional.empty();
         }
@@ -155,7 +168,7 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         if (typeSignature.isPrimitive()) {
             return createBaseTypeSchema(field, requiredFields, annotations);
         } else if (typeSignature.isArray()) {
-            return createArrayTypeSchema(generationContext, typeSignature, annotations);
+            return createArrayTypeSchema(typeSignature, annotations);
         } else if (StringUtils.equalsIgnoreCase(typeSignature.getName(), "java.lang.Object")) {
             ObjectSchema objectSchema = new ObjectSchema();
             objectSchema.setName(field.getName());
@@ -163,11 +176,11 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         } else if (typeSignature.isAssignableFrom(List.class)) {
             if (field.getGenericType() instanceof ParameterizedType) {
                 Class<?> listGenericParameter = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-                return Optional.of(parseArraySignature(listGenericParameter, generationContext, annotations));
+                return Optional.of(schemaGeneratorHelper.parseArraySignature(listGenericParameter, annotations));
             }
             return Optional.empty();
         } else {
-            return createClassRefSchema(generationContext, typeSignature, annotations);
+            return createClassRefSchema(typeSignature, annotations);
         }
     }
 
@@ -179,16 +192,16 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         return schemaFieldFilter.get() != null && schemaFieldFilter.get().shouldIgnore(clazz, field);
     }
 
-    private Optional<Schema> createClassRefSchema(GenerationContext generationContext, Class<?> typeClass, Annotation[] annotations) {
-        Schema<?> schema = parseClassRefTypeSignature(typeClass, annotations, generationContext);
-        enrichWithTypeAnnotations(schema, annotations);
+    private Optional<Schema> createClassRefSchema(Class<?> typeClass, Annotation[] annotations) {
+        Schema<?> schema = schemaGeneratorHelper.parseClassRefTypeSignature(typeClass, annotations);
+        schemaGeneratorHelper.enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
-    private Optional<Schema> createArrayTypeSchema(GenerationContext generationContext, Class<?> typeSignature, Annotation[] annotations) {
+    private Optional<Schema> createArrayTypeSchema(Class<?> typeSignature, Annotation[] annotations) {
         Class<?> arrayComponentType = typeSignature.getComponentType();
-        Schema<?> schema = parseArraySignature(arrayComponentType, generationContext, annotations);
-        enrichWithTypeAnnotations(schema, annotations);
+        Schema<?> schema = schemaGeneratorHelper.parseArraySignature(arrayComponentType, annotations);
+        schemaGeneratorHelper.enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
@@ -196,31 +209,13 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
         if (!requiredFields.contains(field.getName())) {
             requiredFields.add(field.getName());
         }
-        Schema<?> schema = parseBaseTypeSignature(field.getType(), annotations);
-        enrichWithTypeAnnotations(schema, annotations);
+        Schema<?> schema = schemaGeneratorHelper.parseBaseTypeSignature(field.getType(), annotations);
+        schemaGeneratorHelper.enrichWithTypeAnnotations(schema, annotations);
         return Optional.ofNullable(schema);
     }
 
     private boolean isRequired(Annotation[] annotations) {
         return Stream.of(annotations).anyMatch(annotation -> annotation instanceof NotNull);
-    }
-
-    @Override
-    protected Schema createListSchema(Class<?> typeSignature, GenerationContext generationContext, Annotation[] annotations) {
-        return parseArraySignature(typeSignature, generationContext, annotations);
-    }
-
-    @Override
-    protected CustomComposedSchema createRefSchema(Class<?> typeSignature, GenerationContext generationContext) {
-        CustomComposedSchema schema = new CustomComposedSchema();
-        if (isInPackagesToBeScanned(typeSignature, generationContext)) {
-            schema.set$ref(COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
-            return schema;
-        }
-
-        // fallback
-        schema.setType("object");
-        return schema;
     }
 
 }

@@ -1,1522 +1,1554 @@
 {
-    "openapi": "3.0.1",
-    "info": {
-        "title": "Test API",
-        "description": "Test description",
-        "version": "1.0.0"
-    },
-    "paths": {
-        "/cars/{carId}/photos": {
-            "post": {
-                "tags": [
-                    "car-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "uploadCarPhotoUsingPOST",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "carId",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "multipartFile": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "202": {
-                        "description": "Accepted"
-                    }
-                }
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Test API",
+    "description": "Test description",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/cars/{carId}/photos": {
+      "post": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "uploadCarPhotoUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
+          },
+          {
+            "name": "carId",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "multipartFile": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
         },
-        "/lists/list-without-generics": {
-            "get": {
-                "tags": [
-                    "list-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getCarsWithListWithoutGenericsUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "model",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "torque",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/cars/{carId}": {
-            "get": {
-                "tags": [
-                    "car-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getCarUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "carId",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Car"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/{id}/subpath": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "subpathUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "headerA",
-                        "in": "header",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "headerB",
-                        "in": "header",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    },
-                    {
-                        "name": "requestParamA",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamB",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamC",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "complexPostUsingPOST",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "headerA",
-                        "in": "header",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "headerB",
-                        "in": "header",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    },
-                    {
-                        "name": "requestParamA",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamB",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamC",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidationDummy"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/onlyRequestParams": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "onlyRequestParamsUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamA",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamB",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "requestParamC",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/cars": {
-            "get": {
-                "tags": [
-                    "car-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getCarsUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "model",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "torque",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Car"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "car-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "createCarUsingPOST",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "source",
-                        "in": "header",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/Car"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Car"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/fileWithoutResponseAnnotation": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getFileWithoutResponseAnnotationUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/octet-stream": {
-                                "schema": {
-                                    "type": "string",
-                                    "format": "binary"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/lists/with-response-entity": {
-            "get": {
-                "tags": [
-                    "list-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getCarsWithResponseEntityUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "model",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "torque",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Car"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/cars/{carId}/documents": {
-            "post": {
-                "tags": [
-                    "car-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "uploadCarDocumentsUsingPOST",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "source",
-                        "in": "header",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "carId",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "documentFile": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Car"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/enumAsParam": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "enumAsParamUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "carType",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/CarType"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/requestBodyList": {
-            "post": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "requestBodyListUsingPOST",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy": {
-            "post": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "createUsingPOST",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidationDummy"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/requestParamList": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "requestParamListUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "validationDummies",
-                        "in": "query",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/components/schemas/ValidationDummy"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/{id}": {
-            "put": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "createOrReplaceUsingPUT",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidationDummy"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "headers": {
-                            "SomeHeader": {
-                                "description": "TestHeader",
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    },
-                    "200": {
-                        "description": "Replaced",
-                        "headers": {},
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "deleteUsingDELETE",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "options": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getOptionsUsingOPTIONS",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OptionsClass"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "head": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "isPresentUsingHEAD",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "patchUsingPATCH",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "requestBody. Test requestBody interceptor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidationDummy"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/fileWithResponseAnnotation": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getFileWithResponseAnnotationUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/pdf": {
-                                "schema": {
-                                    "type": "string",
-                                    "format": "binary"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/dummy/{id}/subpath/{anotherId}": {
-            "get": {
-                "tags": [
-                    "dummy-controller"
-                ],
-                "summary": "Interceptor summary",
-                "operationId": "getTwoPathVariablesUsingGET",
-                "parameters": [
-                    {
-                        "name": "Test-Global-Header",
-                        "in": "header",
-                        "description": "Some desc",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    },
-                    {
-                        "name": "anotherId",
-                        "in": "path",
-                        "description": ". Interceptor OperationParameter test",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationDummy"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
         }
+      }
     },
-    "components": {
-        "schemas": {
-            "Order": {
-                "description": ". Test schema interceptors",
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Entity"
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "dateTime": {
-                                "type": "string",
-                                "description": ". Test schemaField interceptor",
-                                "format": "date-time"
-                            },
-                            "customer": {
-                                "description": ". Test schemaField interceptor",
-                                "$ref": "#/components/schemas/Customer"
-                            },
-                            "products": {
-                                "type": "array",
-                                "description": ". Test schemaField interceptor",
-                                "items": {
-                                    "$ref": "#/components/schemas/Product"
-                                }
-                            }
-                        }
-                    }
-                ]
-            },
-            "Entity": {
-                "required": [
-                    "id"
-                ],
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor"
-                    }
-                },
-                "description": ". Test schema interceptors"
-            },
-            "Laptop": {
-                "description": ". Test schema interceptors",
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Product"
-                    },
-                    {
-                        "required": [
-                            "hasWifi",
-                            "model"
-                        ],
-                        "type": "object",
-                        "properties": {
-                            "hasWifi": {
-                                "type": "boolean",
-                                "description": ". Test schemaField interceptor"
-                            },
-                            "model": {
-                                "type": "string",
-                                "description": ". Test schemaField interceptor"
-                            }
-                        }
-                    }
-                ],
-                "x-discriminator-value": "laptop"
-            },
-            "Van": {
-                "description": ". Test schema interceptors",
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Car"
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "maxLoad": {
-                                "type": "integer",
-                                "description": ". Test schemaField interceptor",
-                                "format": "int32"
-                            }
-                        }
-                    }
-                ]
-            },
-            "Customer": {
-                "description": ". Test schema interceptors",
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Entity"
-                    },
-                    {
-                        "required": [
-                            "vip"
-                        ],
-                        "type": "object",
-                        "properties": {
-                            "vip": {
-                                "type": "boolean",
-                                "description": ". Test schemaField interceptor"
-                            },
-                            "topCustomerProduct": {
-                                "description": "Testing description. Test schemaField interceptor",
-                                "$ref": "#/components/schemas/Product",
-                                "deprecated": false
-                            }
-                        }
-                    }
-                ]
-            },
-            "ValidationDummy": {
-                "required": [
-                    "notNull"
-                ],
-                "type": "object",
-                "properties": {
-                    "writeOnly": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor",
-                        "writeOnly": true,
-                        "deprecated": false
-                    },
-                    "regex": {
-                        "pattern": "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
-                        "type": "string",
-                        "description": ". Test schemaField interceptor"
-                    },
-                    "notNull": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor"
-                    },
-                    "deprecated": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor",
-                        "deprecated": true
-                    },
-                    "minMax": {
-                        "maximum": 7,
-                        "minimum": 3,
-                        "type": "integer",
-                        "description": ". Test schemaField interceptor",
-                        "format": "int32"
-                    },
-                    "stringSizeOnlyMax": {
-                        "maxLength": 10,
-                        "minLength": 0,
-                        "type": "string",
-                        "description": ". Test schemaField interceptor"
-                    },
-                    "readOnly": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor",
-                        "readOnly": true,
-                        "deprecated": false
-                    },
-                    "decimalRange": {
-                        "maximum": 2.5,
-                        "minimum": 1.05,
-                        "type": "number",
-                        "description": ". Test schemaField interceptor",
-                        "format": "double"
-                    },
-                    "stringSize": {
-                        "maxLength": 10,
-                        "minLength": 2,
-                        "type": "string",
-                        "description": ". Test schemaField interceptor"
-                    },
-                    "javaDeprecated": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor",
-                        "deprecated": true
-                    }
-                },
-                "description": ". Test schema interceptors"
-            },
-            "Product": {
-                "description": ". Test schema interceptors",
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Entity"
-                    },
-                    {
-                        "required": [
-                            "amount",
-                            "price",
-                            "type"
-                        ],
-                        "type": "object",
-                        "properties": {
-                            "amount": {
-                                "type": "integer",
-                                "description": ". Test schemaField interceptor",
-                                "format": "int32"
-                            },
-                            "price": {
-                                "type": "number",
-                                "description": ". Test schemaField interceptor",
-                                "format": "double"
-                            },
-                            "type": {
-                                "type": "string"
-                            }
-                        },
-                        "discriminator": {
-                            "propertyName": "type",
-                            "mapping": {
-                                "van": "Van",
-                                "car": "Car",
-                                "laptop": "Laptop"
-                            }
-                        }
-                    }
-                ]
-            },
-            "ListDummy": {
-                "type": "object",
-                "properties": {
-                    "cars": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "$ref": "#/components/schemas/Car"
-                        }
-                    },
-                    "enums": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "$ref": "#/components/schemas/CarType"
-                        }
-                    },
-                    "products": {
-                        "maxItems": 6,
-                        "minItems": 2,
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "$ref": "#/components/schemas/Product"
-                        }
-                    },
-                    "integers": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "description": ". Test schema interceptors"
-            },
-            "CustomerInventory": {
-                "type": "object",
-                "properties": {
-                    "customers": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "$ref": "#/components/schemas/Customer"
-                        }
-                    },
-                    "object": {
-                        "type": "object",
-                        "description": ". Test schemaField interceptor"
-                    }
-                },
-                "description": ". Test schema interceptors"
-            },
-            "OptionsClass": {
-                "type": "object",
-                "properties": {
-                    "options": {
-                        "type": "string",
-                        "description": ". Test schemaField interceptor"
-                    }
-                },
-                "description": ". Test schema interceptors"
-            },
-            "Car": {
-                "description": ". Test schema interceptors",
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Product"
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "carType": {
-                                "description": ". Test schemaField interceptor",
-                                "$ref": "#/components/schemas/CarType"
-                            },
-                            "torque": {
-                                "maximum": 1000,
-                                "minimum": 0,
-                                "type": "integer",
-                                "description": ". Test schemaField interceptor",
-                                "format": "int32"
-                            },
-                            "model": {
-                                "maxLength": 30,
-                                "minLength": 2,
-                                "type": "string",
-                                "description": ". Test schemaField interceptor"
-                            },
-                            "maxSpeed": {
-                                "type": "integer",
-                                "description": ". Test schemaField interceptor",
-                                "format": "int32"
-                            }
-                        }
-                    }
-                ],
-                "x-discriminator-value": "car"
-            },
-            "CarType": {
-                "type": "string",
-                "description": ". Test schema interceptors",
-                "enum": [
-                    "PERSONAL",
-                    "TRUCK",
-                    "VAN"
-                ]
-            },
-            "ArrayDummy": {
-                "type": "object",
-                "properties": {
-                    "primitiveIntegers": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "type": "integer"
-                        }
-                    },
-                    "cars": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "$ref": "#/components/schemas/Car"
-                        }
-                    },
-                    "integers": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "type": "integer"
-                        }
-                    },
-                    "products": {
-                        "type": "array",
-                        "description": ". Test schemaField interceptor",
-                        "items": {
-                            "$ref": "#/components/schemas/Product"
-                        }
-                    }
-                },
-                "description": ". Test schema interceptors"
+    "/lists/list-without-generics": {
+      "get": {
+        "tags": [
+          "list-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarsWithListWithoutGenericsUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "torque",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
         }
+      }
+    },
+    "/cars/{carId}": {
+      "get": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "carId",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Car"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/{id}/subpath": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "subpathUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "headerA",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "headerB",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "requestParamA",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamB",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamC",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "complexPostUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "headerA",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "headerB",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "requestParamA",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamB",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamC",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/onlyRequestParams": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "onlyRequestParamsUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamA",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamB",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestParamC",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cars": {
+      "get": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarsUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "torque",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Car"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "createCarUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Car"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Car"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/fileWithoutResponseAnnotation": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getFileWithoutResponseAnnotationUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lists/with-response-entity": {
+      "get": {
+        "tags": [
+          "list-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getCarsWithResponseEntityUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "torque",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Car"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cars/{carId}/documents": {
+      "post": {
+        "tags": [
+          "car-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "uploadCarDocumentsUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "header",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "carId",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentFile": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Car"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/enumAsParam": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "enumAsParamUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "carType",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CarType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/requestBodyList": {
+      "post": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "requestBodyListUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy": {
+      "post": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "createUsingPOST",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/requestParamList": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "requestParamListUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "validationDummies",
+            "in": "query",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/{id}": {
+      "put": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "createOrReplaceUsingPUT",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {
+              "SomeHeader": {
+                "description": "TestHeader",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Replaced",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "deleteUsingDELETE",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getOptionsUsingOPTIONS",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionsClass"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "isPresentUsingHEAD",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "patchUsingPATCH",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "requestBody. Test requestBody interceptor",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationDummy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/fileWithResponseAnnotation": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getFileWithResponseAnnotationUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/xmlAsString": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "xmlAsStringUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dummy/{id}/subpath/{anotherId}": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "getTwoPathVariablesUsingGET",
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "anotherId",
+            "in": "path",
+            "description": ". Interceptor OperationParameter test",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationDummy"
+                }
+              }
+            }
+          }
+        }
+      }
     }
+  },
+  "components": {
+    "schemas": {
+      "Order": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "dateTime": {
+                "type": "string",
+                "description": ". Test schemaField interceptor",
+                "format": "date-time"
+              },
+              "customer": {
+                "description": ". Test schemaField interceptor",
+                "$ref": "#/components/schemas/Customer"
+              },
+              "products": {
+                "type": "array",
+                "description": ". Test schemaField interceptor",
+                "items": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Entity": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": ". Test schemaField interceptor"
+          }
+        },
+        "description": ". Test schema interceptors"
+      },
+      "Laptop": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Product"
+          },
+          {
+            "required": [
+              "hasWifi",
+              "model"
+            ],
+            "type": "object",
+            "properties": {
+              "hasWifi": {
+                "type": "boolean",
+                "description": ". Test schemaField interceptor"
+              },
+              "model": {
+                "type": "string",
+                "description": ". Test schemaField interceptor"
+              }
+            }
+          }
+        ],
+        "x-discriminator-value": "laptop"
+      },
+      "Van": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Car"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "maxLoad": {
+                "type": "integer",
+                "description": ". Test schemaField interceptor",
+                "format": "int32"
+              }
+            }
+          }
+        ]
+      },
+      "Customer": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "required": [
+              "vip"
+            ],
+            "type": "object",
+            "properties": {
+              "vip": {
+                "type": "boolean",
+                "description": ". Test schemaField interceptor"
+              },
+              "topCustomerProduct": {
+                "description": "Testing description. Test schemaField interceptor",
+                "$ref": "#/components/schemas/Product",
+                "deprecated": false
+              }
+            }
+          }
+        ]
+      },
+      "ValidationDummy": {
+        "required": [
+          "notNull"
+        ],
+        "type": "object",
+        "properties": {
+          "writeOnly": {
+            "type": "string",
+            "description": ". Test schemaField interceptor",
+            "writeOnly": true,
+            "deprecated": false
+          },
+          "regex": {
+            "pattern": "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "type": "string",
+            "description": ". Test schemaField interceptor"
+          },
+          "notNull": {
+            "type": "string",
+            "description": ". Test schemaField interceptor"
+          },
+          "deprecated": {
+            "type": "string",
+            "description": ". Test schemaField interceptor",
+            "deprecated": true
+          },
+          "minMax": {
+            "maximum": 7,
+            "minimum": 3,
+            "type": "integer",
+            "description": ". Test schemaField interceptor",
+            "format": "int32"
+          },
+          "stringSizeOnlyMax": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "description": ". Test schemaField interceptor"
+          },
+          "readOnly": {
+            "type": "string",
+            "description": ". Test schemaField interceptor",
+            "readOnly": true,
+            "deprecated": false
+          },
+          "decimalRange": {
+            "maximum": 2.5,
+            "minimum": 1.05,
+            "type": "number",
+            "description": ". Test schemaField interceptor",
+            "format": "double"
+          },
+          "stringSize": {
+            "maxLength": 10,
+            "minLength": 2,
+            "type": "string",
+            "description": ". Test schemaField interceptor"
+          },
+          "javaDeprecated": {
+            "type": "string",
+            "description": ". Test schemaField interceptor",
+            "deprecated": true
+          }
+        },
+        "description": ". Test schema interceptors"
+      },
+      "Product": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "required": [
+              "amount",
+              "price",
+              "type"
+            ],
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "description": ". Test schemaField interceptor",
+                "format": "int32"
+              },
+              "price": {
+                "type": "number",
+                "description": ". Test schemaField interceptor",
+                "format": "double"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "van": "Van",
+                "car": "Car",
+                "laptop": "Laptop"
+              }
+            }
+          }
+        ]
+      },
+      "ListDummy": {
+        "type": "object",
+        "properties": {
+          "cars": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "$ref": "#/components/schemas/Car"
+            }
+          },
+          "enums": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "$ref": "#/components/schemas/CarType"
+            }
+          },
+          "products": {
+            "maxItems": 6,
+            "minItems": 2,
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "integers": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "description": ". Test schema interceptors"
+      },
+      "CustomerInventory": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "$ref": "#/components/schemas/Customer"
+            }
+          },
+          "object": {
+            "type": "object",
+            "description": ". Test schemaField interceptor"
+          }
+        },
+        "description": ". Test schema interceptors"
+      },
+      "OptionsClass": {
+        "type": "object",
+        "properties": {
+          "options": {
+            "type": "string",
+            "description": ". Test schemaField interceptor"
+          }
+        },
+        "description": ". Test schema interceptors"
+      },
+      "Car": {
+        "description": ". Test schema interceptors",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Product"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "carType": {
+                "description": ". Test schemaField interceptor",
+                "$ref": "#/components/schemas/CarType"
+              },
+              "torque": {
+                "maximum": 1000,
+                "minimum": 0,
+                "type": "integer",
+                "description": ". Test schemaField interceptor",
+                "format": "int32"
+              },
+              "model": {
+                "maxLength": 30,
+                "minLength": 2,
+                "type": "string",
+                "description": ". Test schemaField interceptor"
+              },
+              "maxSpeed": {
+                "type": "integer",
+                "description": ". Test schemaField interceptor",
+                "format": "int32"
+              }
+            }
+          }
+        ],
+        "x-discriminator-value": "car"
+      },
+      "CarType": {
+        "type": "string",
+        "description": ". Test schema interceptors",
+        "enum": [
+          "PERSONAL",
+          "TRUCK",
+          "VAN"
+        ]
+      },
+      "ArrayDummy": {
+        "type": "object",
+        "properties": {
+          "primitiveIntegers": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "cars": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "$ref": "#/components/schemas/Car"
+            }
+          },
+          "integers": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "products": {
+            "type": "array",
+            "description": ". Test schemaField interceptor",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          }
+        },
+        "description": ". Test schema interceptors"
+      }
+    }
+  }
 }

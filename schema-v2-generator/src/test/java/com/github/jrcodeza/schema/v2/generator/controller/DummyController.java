@@ -1,5 +1,17 @@
 package com.github.jrcodeza.schema.v2.generator.controller;
 
+import java.util.List;
+
+import com.github.jrcodeza.Header;
+import com.github.jrcodeza.OpenApiExample;
+import com.github.jrcodeza.OpenApiExamples;
+import com.github.jrcodeza.OpenApiIgnore;
+import com.github.jrcodeza.Response;
+import com.github.jrcodeza.Responses;
+import com.github.jrcodeza.schema.v2.generator.domain.CarType;
+import com.github.jrcodeza.schema.v2.generator.domain.OptionsClass;
+import com.github.jrcodeza.schema.v2.generator.domain.dummy.ValidationDummy;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,18 +29,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-
-import com.github.jrcodeza.Header;
-import com.github.jrcodeza.OpenApiExample;
-import com.github.jrcodeza.OpenApiExamples;
-import com.github.jrcodeza.OpenApiIgnore;
-import com.github.jrcodeza.Response;
-import com.github.jrcodeza.Responses;
-import com.github.jrcodeza.schema.v2.generator.domain.CarType;
-import com.github.jrcodeza.schema.v2.generator.domain.OptionsClass;
-import com.github.jrcodeza.schema.v2.generator.domain.dummy.ValidationDummy;
 
 @RestController
 @RequestMapping("/dummy")
@@ -147,6 +147,11 @@ public class DummyController {
 
 	@GetMapping(path = "/enumAsParam")
 	public ValidationDummy enumAsParam(@RequestParam CarType carType) {
+		return null;
+	}
+
+	@GetMapping(path = "/xmlAsString", produces = "application/xml")
+	public String xmlAsString() {
 		return null;
 	}
 }

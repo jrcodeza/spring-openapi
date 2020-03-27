@@ -154,4 +154,9 @@ public class DummyController {
 	public ValidationDummy enumAsParam(@RequestParam CarType carType) {
 		return null;
 	}
+
+	@GetMapping(path = "/xmlAsString", produces = "application/xml")
+	public String xmlAsString() {
+		return null;
+	}
 }

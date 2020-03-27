@@ -906,6 +906,35 @@
         }
       }
     },
+    "/dummy/xmlAsString": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "xmlAsStringUsingGET",
+        "produces": [
+          "application/xml"
+        ],
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "/dummy/{id}/subpath/{anotherId}": {
       "get": {
         "tags": [

@@ -199,7 +199,9 @@ public abstract class OpenApiTransformer {
 		if (StringUtils.isNotBlank(format)) {
 			schema.setFormat(format);
 		}
-		asList(annotations).forEach(annotation -> applyStringAnnotationDetails(schema, annotation));
+		if (annotations != null) {
+			asList(annotations).forEach(annotation -> applyStringAnnotationDetails(schema, annotation));
+		}
 		return schema;
 	}
 

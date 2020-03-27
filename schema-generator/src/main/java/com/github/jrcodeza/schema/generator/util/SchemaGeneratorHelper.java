@@ -219,7 +219,9 @@ public class SchemaGeneratorHelper {
         if (StringUtils.isNotBlank(format)) {
             schema.setFormat(format);
         }
-        asList(annotations).forEach(annotation -> applyStringAnnotations(schema, annotation));
+        if (annotations != null) {
+            asList(annotations).forEach(annotation -> applyStringAnnotations(schema, annotation));
+        }
         return schema;
     }
 

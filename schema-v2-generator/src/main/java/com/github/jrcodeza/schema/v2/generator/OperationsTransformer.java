@@ -258,6 +258,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 			if (mediaType != null) {
 				apiResponse.setSchema(mediaType);
+			} else if (methodReturnType.getName().startsWith("java.lang.")) {
+				apiResponse.setSchema(createRefTypeProperty(methodReturnType, null, null));
 			}
 
 			Map<String, io.swagger.models.Response> apiResponses = new HashMap<>();
@@ -277,7 +279,8 @@ public class OperationsTransformer extends OpenApiTransformer {
 					mediaType = new FileProperty();
 					((FileProperty) mediaType).setType("string");
 					((FileProperty) mediaType).setFormat("binary");
-
+				} else if (responseAnnotation.responseBody().getName().startsWith("java.lang.")) {
+					mediaType = createRefTypeProperty(responseAnnotation.responseBody(), null, null);
 				} else {
 					mediaType = new RefProperty();
 					((RefProperty) mediaType).set$ref(CommonConstants.COMPONENT_REF_PREFIX + responseAnnotation.responseBody().getSimpleName());
@@ -660,7 +663,9 @@ public class OperationsTransformer extends OpenApiTransformer {
 
 	private Property parseArraySignatureForParameter(Class<?> elementTypeSignature, Annotation[] annotations) {
 		ArrayProperty arraySchema = new ArrayProperty();
-		Stream.of(annotations).forEach(annotation -> applyArrayAnnotationDetails(arraySchema, annotation));
+		if (annotations != null) {
+			Stream.of(annotations).forEach(annotation -> applyArrayAnnotationDetails(arraySchema, annotation));
+		}
 		if (elementTypeSignature.isPrimitive()) {
 			// primitive type like int
 			Property property = createProperty(elementTypeSignature);

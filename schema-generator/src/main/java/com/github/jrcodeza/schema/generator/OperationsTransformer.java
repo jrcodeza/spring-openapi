@@ -241,6 +241,12 @@ public class OperationsTransformer {
 				Content content = new Content();
 				content.addMediaType(StringUtils.isBlank(produces) ? resolveDefaultContentType(methodReturnType) : produces, mediaType);
 				apiResponse.setContent(content);
+			} else if (methodReturnType.getName().startsWith("java.lang.")) {
+				Content content = new Content();
+				MediaType simpleMediaType = new MediaType();
+				simpleMediaType.setSchema(schemaGeneratorHelper.parseClassRefTypeSignature(methodReturnType, null, null));
+				content.addMediaType(StringUtils.isBlank(produces) ? resolveDefaultContentType(methodReturnType) : produces, simpleMediaType);
+				apiResponse.setContent(content);
 			}
 
 			ApiResponses apiResponses = new ApiResponses();
@@ -260,6 +266,8 @@ public class OperationsTransformer {
 				if (isFileResponse(responseAnnotation.responseBody())) {
 					schema.setType("string");
 					schema.setFormat("binary");
+				} else if (responseAnnotation.responseBody().getName().startsWith("java.lang.")) {
+					schema = schemaGeneratorHelper.parseClassRefTypeSignature(responseAnnotation.responseBody(), null, null);
 				} else {
 					schema.set$ref(COMPONENT_REF_PREFIX + responseAnnotation.responseBody().getSimpleName());
 				}

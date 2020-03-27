@@ -5,8 +5,8 @@
     "version": "1.0.0",
     "title": "Test API"
   },
-  "basePath": "/test",
   "host": "test.com",
+  "basePath": "/test",
   "paths": {
     "/cars/{carId}/photos": {
       "post": {
@@ -852,6 +852,35 @@
             "schema": {
               "type": "string",
               "format": "binary"
+            }
+          }
+        }
+      }
+    },
+    "/dummy/xmlAsString": {
+      "get": {
+        "tags": [
+          "dummy-controller"
+        ],
+        "summary": "Interceptor summary",
+        "operationId": "xmlAsStringUsingGET",
+        "produces": [
+          "application/xml"
+        ],
+        "parameters": [
+          {
+            "name": "Test-Global-Header",
+            "in": "header",
+            "description": "Some desc",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
             }
           }
         }

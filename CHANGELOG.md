@@ -1,5 +1,10 @@
 # Release notes
 
+## 1.4.6
+
+#44 https://github.com/jrcodeza/spring-openapi/issues/44
+#47 https://github.com/jrcodeza/spring-openapi/issues/47
+
 ## 1.4.5
 #41 https://github.com/jrcodeza/spring-openapi/issues/41
 #42 https://github.com/jrcodeza/spring-openapi/issues/42

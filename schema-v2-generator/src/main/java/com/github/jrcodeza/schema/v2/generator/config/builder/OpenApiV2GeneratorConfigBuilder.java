@@ -1,5 +1,7 @@
 package com.github.jrcodeza.schema.v2.generator.config.builder;
 
+import org.springframework.core.env.Environment;
+
 import com.github.jrcodeza.schema.v2.generator.config.CompatibilityMode;
 import com.github.jrcodeza.schema.v2.generator.config.OpenApiV2GeneratorConfig;
 
@@ -27,6 +29,11 @@ public final class OpenApiV2GeneratorConfigBuilder {
 
 	public OpenApiV2GeneratorConfigBuilder withHost(String host) {
 		openApiV2GeneratorConfig.setHost(host);
+		return this;
+	}
+
+	public OpenApiV2GeneratorConfigBuilder withEnvironment(Environment environment) {
+		openApiV2GeneratorConfig.setEnvironment(environment);
 		return this;
 	}
 

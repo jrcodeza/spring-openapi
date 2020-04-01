@@ -1,5 +1,7 @@
 package com.github.jrcodeza.schema.generator.config.builder;
 
+import org.springframework.core.env.Environment;
+
 import com.github.jrcodeza.schema.generator.config.OpenApiGeneratorConfig;
 import com.github.jrcodeza.schema.generator.interceptors.examples.OpenApiExampleResolver;
 
@@ -22,6 +24,11 @@ public final class OpenApiGeneratorConfigBuilder {
 
 	public OpenApiGeneratorConfigBuilder withOpenApiExampleResolver(OpenApiExampleResolver openApiExampleResolver) {
 		openApiGeneratorConfig.setOpenApiExampleResolver(openApiExampleResolver);
+		return this;
+	}
+
+	public OpenApiGeneratorConfigBuilder withEnvironment(Environment environment) {
+		openApiGeneratorConfig.setEnvironment(environment);
 		return this;
 	}
 

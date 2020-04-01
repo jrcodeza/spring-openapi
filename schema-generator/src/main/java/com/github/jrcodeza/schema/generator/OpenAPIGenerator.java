@@ -1,5 +1,32 @@
 package com.github.jrcodeza.schema.generator;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.core.type.filter.RegexPatternTypeFilter;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.jrcodeza.OpenApiIgnore;
@@ -17,60 +44,30 @@ import com.github.jrcodeza.schema.generator.interceptors.examples.OperationParam
 import com.github.jrcodeza.schema.generator.model.Header;
 import com.github.jrcodeza.schema.generator.model.InheritanceInfo;
 import com.github.jrcodeza.schema.generator.util.SchemaGeneratorHelper;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.Schema;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.core.type.filter.RegexPatternTypeFilter;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 
 public class OpenAPIGenerator {
 
-    private static Logger logger = LoggerFactory.getLogger(OpenAPIGenerator.class);
-
     private static final String DEFAULT_DISCRIMINATOR_NAME = "type";
-
-    private List<String> modelPackages;
-    private List<String> controllerBasePackages;
-
+	private static Logger logger = LoggerFactory.getLogger(OpenAPIGenerator.class);
     private final ComponentSchemaTransformer componentSchemaTransformer;
     private final OperationsTransformer operationsTransformer;
     private final Info info;
-
     private final List<SchemaInterceptor> schemaInterceptors;
     private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
     private final List<OperationParameterInterceptor> operationParameterInterceptors;
     private final List<OperationInterceptor> operationInterceptors;
     private final List<RequestBodyInterceptor> requestBodyInterceptors;
-
+	private final List<Header> globalHeaders;
+	private final SchemaGeneratorHelper schemaGeneratorHelper;
+	private List<String> modelPackages;
+	private List<String> controllerBasePackages;
+	private Environment environment;
     private AtomicReference<OperationFilter> operationFilter;
     private AtomicReference<OperationParameterFilter> operationParameterFilter;
     private AtomicReference<SchemaFieldFilter> schemaFieldFilter;
-
-    private final List<Header> globalHeaders;
-    private final SchemaGeneratorHelper schemaGeneratorHelper;
 
     public OpenAPIGenerator(List<String> modelPackages, List<String> controllerBasePackages, Info info) {
         this(modelPackages, controllerBasePackages, info, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, null);
@@ -101,11 +98,11 @@ public class OpenAPIGenerator {
         this.operationParameterFilter = new AtomicReference<>(operationParameterFilter);
         this.schemaFieldFilter = new AtomicReference<>(schemaFieldFilter);
 
-        this.schemaGeneratorHelper = new SchemaGeneratorHelper(removeRegexFormatFromPackages(modelPackages));
-        this.componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter, schemaGeneratorHelper);
-        this.globalHeaders = new ArrayList<>();
+		schemaGeneratorHelper = new SchemaGeneratorHelper(removeRegexFormatFromPackages(modelPackages));
+		componentSchemaTransformer = new ComponentSchemaTransformer(schemaFieldInterceptors, this.schemaFieldFilter, schemaGeneratorHelper);
+		globalHeaders = new ArrayList<>();
 
-        this.operationsTransformer = new OperationsTransformer(
+		operationsTransformer = new OperationsTransformer(
                 schemaGeneratorHelper, operationParameterInterceptors, operationInterceptors, requestBodyInterceptors, globalHeaders,
                 this.operationFilter, this.operationParameterFilter);
 
@@ -123,6 +120,7 @@ public class OpenAPIGenerator {
 
     public OpenAPI generate(OpenApiGeneratorConfig openApiGeneratorConfig) {
         logger.info("Starting OpenAPI generation");
+		environment = openApiGeneratorConfig.getEnvironment();
         initializeExampleInterceptor(openApiGeneratorConfig);
         OpenAPI openAPI = new OpenAPI();
         openAPI.setComponents(createComponentsWrapper());
@@ -144,23 +142,23 @@ public class OpenAPIGenerator {
     }
 
     public void addSchemaInterceptor(SchemaInterceptor schemaInterceptor) {
-        this.schemaInterceptors.add(schemaInterceptor);
+		schemaInterceptors.add(schemaInterceptor);
     }
 
     public void addSchemaFieldInterceptor(SchemaFieldInterceptor schemaFieldInterceptor) {
-        this.schemaFieldInterceptors.add(schemaFieldInterceptor);
+		schemaFieldInterceptors.add(schemaFieldInterceptor);
     }
 
     public void addOperationParameterInterceptor(OperationParameterInterceptor operationParameterInterceptor) {
-        this.operationParameterInterceptors.add(operationParameterInterceptor);
+		operationParameterInterceptors.add(operationParameterInterceptor);
     }
 
     public void addOperationInterceptor(OperationInterceptor operationInterceptor) {
-        this.operationInterceptors.add(operationInterceptor);
+		operationInterceptors.add(operationInterceptor);
     }
 
     public void addRequestBodyInterceptor(RequestBodyInterceptor requestBodyInterceptor) {
-        this.requestBodyInterceptors.add(requestBodyInterceptor);
+		requestBodyInterceptors.add(requestBodyInterceptor);
     }
 
     public void addGlobalHeader(String name, String description, boolean required) {
@@ -196,8 +194,8 @@ public class OpenAPIGenerator {
     }
 
     private Map<String, PathItem> createPathExtensions() {
-        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
+		ClassPathScanningCandidateComponentProvider scanner = createClassPathScanningCandidateComponentProvider();
+		scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
 
         List<Class<?>> controllerClasses = new ArrayList<>();
         List<String> packagesWithoutRegex = removeRegexFormatFromPackages(controllerBasePackages);
@@ -211,7 +209,14 @@ public class OpenAPIGenerator {
         return operationsTransformer.transformOperations(controllerClasses);
     }
 
-    private Components createComponentsWrapper() {
+	private ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider() {
+		if (environment == null) {
+			return new ClassPathScanningCandidateComponentProvider(false);
+		}
+		return new ClassPathScanningCandidateComponentProvider(false, environment);
+	}
+
+	private Components createComponentsWrapper() {
         Components componentsWrapper = new Components();
         componentsWrapper.setSchemas(createSchemas());
         return componentsWrapper;

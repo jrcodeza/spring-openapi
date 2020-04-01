@@ -194,13 +194,8 @@ public class OpenAPIGenerator {
     }
 
     private Map<String, PathItem> createPathExtensions() {
-		ClassPathScanningCandidateComponentProvider scanner;
-		if (environment == null) {
-			scanner = new ClassPathScanningCandidateComponentProvider(false);
-		} else {
-			scanner = new ClassPathScanningCandidateComponentProvider(false, environment);
-		}
-        scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
+		ClassPathScanningCandidateComponentProvider scanner = createClassPathScanningCandidateComponentProvider();
+		scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
 
         List<Class<?>> controllerClasses = new ArrayList<>();
         List<String> packagesWithoutRegex = removeRegexFormatFromPackages(controllerBasePackages);
@@ -214,7 +209,15 @@ public class OpenAPIGenerator {
         return operationsTransformer.transformOperations(controllerClasses);
     }
 
-    private Components createComponentsWrapper() {
+	private ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider() {
+		if (environment == null) {
+			return new ClassPathScanningCandidateComponentProvider(false);
+		} else {
+			return new ClassPathScanningCandidateComponentProvider(false, environment);
+		}
+	}
+
+	private Components createComponentsWrapper() {
         Components componentsWrapper = new Components();
         componentsWrapper.setSchemas(createSchemas());
         return componentsWrapper;

@@ -148,12 +148,7 @@ public class OpenAPIV2Generator {
 	}
 
 	private Map<String, Path> createPaths(OpenApiV2GeneratorConfig config) {
-		ClassPathScanningCandidateComponentProvider scanner;
-		if (environment == null) {
-			scanner = new ClassPathScanningCandidateComponentProvider(false);
-		} else {
-			scanner = new ClassPathScanningCandidateComponentProvider(false, environment);
-		}
+		ClassPathScanningCandidateComponentProvider scanner = createClassPathScanningCandidateComponentProvider();
 		scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
 
 		List<Class<?>> controllerClasses = new ArrayList<>();
@@ -166,6 +161,14 @@ public class OpenAPIV2Generator {
 			}
 		}
 		return operationsTransformer.transformOperations(controllerClasses, config);
+	}
+
+	private ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider() {
+		if (environment == null) {
+			return new ClassPathScanningCandidateComponentProvider(false);
+		} else {
+			return new ClassPathScanningCandidateComponentProvider(false, environment);
+		}
 	}
 
 	private Map<String, Model> createDefinitions() {

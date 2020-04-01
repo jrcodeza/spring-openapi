@@ -212,9 +212,8 @@ public class OpenAPIGenerator {
 	private ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider() {
 		if (environment == null) {
 			return new ClassPathScanningCandidateComponentProvider(false);
-		} else {
-			return new ClassPathScanningCandidateComponentProvider(false, environment);
 		}
+		return new ClassPathScanningCandidateComponentProvider(false, environment);
 	}
 
 	private Components createComponentsWrapper() {

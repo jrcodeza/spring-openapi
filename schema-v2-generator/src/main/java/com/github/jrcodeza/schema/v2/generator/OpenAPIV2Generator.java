@@ -166,9 +166,8 @@ public class OpenAPIV2Generator {
 	private ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider() {
 		if (environment == null) {
 			return new ClassPathScanningCandidateComponentProvider(false);
-		} else {
-			return new ClassPathScanningCandidateComponentProvider(false, environment);
 		}
+		return new ClassPathScanningCandidateComponentProvider(false, environment);
 	}
 
 	private Map<String, Model> createDefinitions() {

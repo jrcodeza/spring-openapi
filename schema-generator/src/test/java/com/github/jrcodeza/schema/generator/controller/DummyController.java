@@ -10,8 +10,10 @@ import com.github.jrcodeza.Response;
 import com.github.jrcodeza.Responses;
 import com.github.jrcodeza.schema.generator.domain.CarType;
 import com.github.jrcodeza.schema.generator.domain.OptionsClass;
+import com.github.jrcodeza.schema.generator.domain.dummy.ParametrizedDummy;
 import com.github.jrcodeza.schema.generator.domain.dummy.ValidationDummy;
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -157,6 +159,11 @@ public class DummyController {
 
 	@GetMapping(path = "/xmlAsString", produces = "application/xml")
 	public String xmlAsString() {
+		return null;
+	}
+
+	@GetMapping(path = "/parametrizedDummy")
+	public ParametrizedDummy<ValidationDummy> parametrizedDummy() {
 		return null;
 	}
 }

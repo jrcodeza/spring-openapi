@@ -1,19 +1,5 @@
 package com.github.jrcodeza.schema.v2.generator;
 
-import io.swagger.models.Info;
-import io.swagger.models.Model;
-import io.swagger.models.ModelImpl;
-import io.swagger.models.Path;
-import io.swagger.models.Swagger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.env.Environment;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.core.type.filter.RegexPatternTypeFilter;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,9 +26,22 @@ import com.github.jrcodeza.schema.v2.generator.interceptors.SchemaInterceptor;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.model.Header;
 import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
-import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.core.type.filter.RegexPatternTypeFilter;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.models.Info;
+import io.swagger.models.Model;
+import io.swagger.models.Path;
+import io.swagger.models.Swagger;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
@@ -202,15 +201,7 @@ public class OpenAPIV2Generator {
 				schemaMap.put(clazz.getSimpleName(), transformedComponentSchema);
 			}
 		}
-		schemaMap.put(CommonConstants.FILE_COMPONENT_NAME, createFileModel());
 		return schemaMap;
-	}
-
-	private Model createFileModel() {
-		ModelImpl model = new ModelImpl();
-		model.setType("string");
-		model.setFormat("binary");
-		return model;
 	}
 
 	private Class<?> getClass(BeanDefinition beanDefinition) {

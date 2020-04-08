@@ -33,10 +33,20 @@
           {
             "in": "body",
             "name": "multipartFile",
-            "description": "multipartFile",
+            "description": "multipartFile. Test requestBody interceptor",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/ApiFile"
+              "properties": {
+                "multipart/form-data": {
+                  "type": "object",
+                  "properties": {
+                    "multipartFile": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
             }
           }
         ],
@@ -516,10 +526,20 @@
           {
             "in": "body",
             "name": "documentFile",
-            "description": "documentFile",
+            "description": "documentFile. Test requestBody interceptor",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/ApiFile"
+              "properties": {
+                "multipart/form-data": {
+                  "type": "object",
+                  "properties": {
+                    "documentFile": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
             }
           }
         ],
@@ -1169,10 +1189,6 @@
         }
       },
       "description": ". Test schema interceptors"
-    },
-    "ApiFile": {
-      "type": "string",
-      "format": "binary"
     },
     "CustomerInventory": {
       "type": "object",

@@ -67,7 +67,6 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.StringProperty;
 
-import static com.github.jrcodeza.schema.v2.generator.util.CommonConstants.FILE_COMPONENT_NAME;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -523,7 +522,7 @@ public class OperationsTransformer extends OpenApiTransformer {
 		content.addProperty(resolveContentType(userDefinedContentType, requestBodyParameter.getParameter()), property);
 
 		OpenApiV2GeneratorConfig config = openApiV2GeneratorConfig.get();
-		return config.getCompatibilityMode() == CompatibilityMode.NSWAG
+		return config.getCompatibilityMode() == CompatibilityMode.NSWAG && !isFile(property)
 				? createNswagRequestBody(requestBodyParameter, property)
 				: createStandardRequestBody(method, requestBodyParameter, content, property);
 	}
@@ -549,10 +548,6 @@ public class OperationsTransformer extends OpenApiTransformer {
 		if (property instanceof RefProperty) {
 			CustomSchema customSchema = new CustomSchema();
 			customSchema.setRef(((RefProperty) property).get$ref());
-			requestBody.setSchema(customSchema);
-		} else if (isFile(property)) {
-			CustomSchema customSchema = new CustomSchema();
-			customSchema.setRef(CommonConstants.COMPONENT_REF_PREFIX + FILE_COMPONENT_NAME);
 			requestBody.setSchema(customSchema);
 		} else if (property instanceof ArrayProperty) {
 			requestBody.setType("array");

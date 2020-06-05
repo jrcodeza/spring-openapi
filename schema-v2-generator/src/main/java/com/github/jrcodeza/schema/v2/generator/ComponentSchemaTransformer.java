@@ -1,5 +1,17 @@
 package com.github.jrcodeza.schema.v2.generator;
 
+import io.swagger.models.ComposedModel;
+import io.swagger.models.Model;
+import io.swagger.models.ModelImpl;
+import io.swagger.models.RefModel;
+import io.swagger.models.properties.ObjectProperty;
+import io.swagger.models.properties.Property;
+import io.swagger.models.properties.RefProperty;
+import io.swagger.models.properties.UntypedProperty;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.ReflectionUtils;
+
+import javax.validation.constraints.NotNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -10,31 +22,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.validation.constraints.NotNull;
-
 import com.github.jrcodeza.schema.v2.generator.interceptors.SchemaFieldInterceptor;
 import com.github.jrcodeza.schema.v2.generator.model.GenerationContext;
 import com.github.jrcodeza.schema.v2.generator.model.InheritanceInfo;
 import com.github.jrcodeza.schema.v2.generator.util.CommonConstants;
 import com.github.jrcodeza.schema.v2.generator.util.GeneratorUtils;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.ReflectionUtils;
-
-import io.swagger.models.ComposedModel;
-import io.swagger.models.Model;
-import io.swagger.models.ModelImpl;
-import io.swagger.models.RefModel;
-import io.swagger.models.properties.ObjectProperty;
-import io.swagger.models.properties.Property;
-import io.swagger.models.properties.RefProperty;
-import io.swagger.models.properties.UntypedProperty;
-
 public class ComponentSchemaTransformer extends OpenApiTransformer {
-
-	private static Logger logger = LoggerFactory.getLogger(ComponentSchemaTransformer.class);
 
 	private final List<SchemaFieldInterceptor> schemaFieldInterceptors;
 
@@ -159,17 +153,6 @@ public class ComponentSchemaTransformer extends OpenApiTransformer {
 	protected Property createRefProperty(Class<?> typeSignature, GenerationContext generationContext) {
 		RefProperty schema = new RefProperty();
 		if (isInPackagesToBeScanned(typeSignature, generationContext)) {
-			if (generationContext.getInheritanceMap().containsKey(typeSignature.getName())) {
-				InheritanceInfo inheritanceInfo = generationContext.getInheritanceMap().get(typeSignature.getName());
-				try {
-					String className = inheritanceInfo.getDiscriminatorClassMap().keySet().stream().findFirst().orElseThrow(RuntimeException::new);
-					Class<?> clazz = Class.forName(className);
-					schema.set$ref(CommonConstants.COMPONENT_REF_PREFIX + clazz.getSuperclass().getSimpleName());
-				} catch (ClassNotFoundException e) {
-					logger.info("Exception occurred", e);
-				}
-				return schema;
-			}
 			schema.set$ref(CommonConstants.COMPONENT_REF_PREFIX + typeSignature.getSimpleName());
 			return schema;
 		}

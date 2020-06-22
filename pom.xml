@@ -58,6 +58,8 @@
 		<swagger-v2-api.version>1.6.0</swagger-v2-api.version>
 		<commons-lang3.version>3.9</commons-lang3.version>
         <json-path.version>2.4.0</json-path.version>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
 
     <dependencyManagement>

@@ -4,7 +4,7 @@
 
     <groupId>com.github.jrcodeza</groupId>
     <artifactId>spring-openapi</artifactId>
-    <version>1.4.8-SNAPSHOT</version>
+    <version>1.4.8</version>
 
     <packaging>pom</packaging>
 
@@ -224,7 +224,7 @@
         <connection>scm:git:git://github.com/jremenec/spring-openapi</connection>
         <developerConnection>scm:git:git@github.com:jremenec/spring-openapi.git</developerConnection>
         <url>https://github.com/jremenec/spring-openapi</url>
-        <tag>spring-openapi-1.4.7</tag>
+        <tag>spring-openapi-1.4.8</tag>
     </scm>
 
     <distributionManagement>

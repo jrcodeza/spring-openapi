@@ -46,7 +46,7 @@
         <classgraph.version>4.8.43</classgraph.version>
         <jackson-databind.version>2.10.0.pr1</jackson-databind.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <validation-api.version>2.0.1.Final</validation-api.version>
         <jackson-annotations.version>2.9.9</jackson-annotations.version>
         <log4j-api.version>2.6.1</log4j-api.version>

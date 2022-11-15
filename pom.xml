@@ -44,7 +44,7 @@
         <maven-plugin-annotations.version>3.5.1</maven-plugin-annotations.version>
         <swagger-api.version>2.0.8</swagger-api.version>
         <classgraph.version>4.8.43</classgraph.version>
-        <jackson-databind.version>2.10.0.pr1</jackson-databind.version>
+        <jackson-databind.version>2.12.7.1</jackson-databind.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <junit.version>4.12</junit.version>
         <validation-api.version>2.0.1.Final</validation-api.version>
